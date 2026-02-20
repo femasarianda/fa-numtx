@@ -70,20 +70,20 @@ export default function RegionPieChart() {
         {chartData.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
         ) : (
-          // py-6 untuk tambah space atas bawah supaya label persentase tidak terpotong
-          <div className="py-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
+          <div className="pt-10 pb-10">
+            <ResponsiveContainer width="100%" height={320}>
+              <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                 <Pie
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  outerRadius={90}
+                  outerRadius={75}
                   dataKey="value"
                   label={({ percentage }) => `${percentage.toFixed(1)}%`}
-                  labelLine={false}
+                  labelLine={true}
                   activeIndex={activeIndex}
                   activeShape={renderActiveShape}
+                  onMouseEnter={(_, index) => setActiveIndex(index)}
                   onMouseLeave={() => setActiveIndex(undefined)}
                   onClick={(_, index) =>
                     setActiveIndex(activeIndex === index ? undefined : index)
