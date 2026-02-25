@@ -3,8 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Sector } from "recharts";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { format, subDays, subMonths, startOfMonth, startOfYear } from "date-fns";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -31,6 +34,8 @@ function getDateRange(period: string): { start: Date; end: Date } {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   switch (period) {
+    case "latest":
+      return { start: today, end: today };
     case "previous_day":
       return { start: subDays(today, 1), end: subDays(today, 1) };
     case "last_7_days":
@@ -175,20 +180,21 @@ export default function RegionPieChart() {
           </div>
         )}
 
-        {/* Date range display + calendar icon */}
+        {/* Date range display + calendar icon - entire area clickable */}
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <div className="flex items-center justify-center gap-2 pt-2">
-            <span className="text-sm text-primary font-medium">
-              {format(startDate, "dd MMM yy")} - {format(endDate, "dd MMM yy")}
-            </span>
-            <SheetTrigger asChild>
-              <button onClick={handleOpenSheet} className="text-primary hover:text-primary/80 transition-colors">
-                <CalendarIcon className="h-5 w-5" />
-              </button>
-            </SheetTrigger>
-          </div>
+          <SheetTrigger asChild>
+            <button
+              onClick={handleOpenSheet}
+              className="flex items-center justify-center gap-2 pt-2 w-full cursor-pointer hover:opacity-80 transition-opacity"
+            >
+              <span className="text-sm text-primary font-medium">
+                {format(startDate, "dd MMM yy")} - {format(endDate, "dd MMM yy")}
+              </span>
+              <CalendarIcon className="h-5 w-5 text-primary" />
+            </button>
+          </SheetTrigger>
 
-          <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto">
+          <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto mx-auto lg:max-w-[33vw]">
             <SheetHeader className="pb-4">
               <SheetTitle className="text-center">Periode</SheetTitle>
             </SheetHeader>
@@ -206,7 +212,7 @@ export default function RegionPieChart() {
 
             <Separator className="my-4" />
 
-            {/* Start / End date controls */}
+            {/* Start / End date controls with clickable date picker */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <p className="text-sm font-semibold text-primary mb-2">Start</p>
@@ -214,7 +220,22 @@ export default function RegionPieChart() {
                   <button onClick={() => setTempStart(adjustDate(tempStart, -1))} className="p-1 text-muted-foreground hover:text-foreground">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <span className="text-sm">{format(tempStart, "dd MMM yy")}</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="text-sm hover:text-primary hover:underline transition-colors cursor-pointer">
+                        {format(tempStart, "dd MMM yy")}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="center">
+                      <Calendar
+                        mode="single"
+                        selected={tempStart}
+                        onSelect={(date) => date && setTempStart(date)}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <button onClick={() => setTempStart(adjustDate(tempStart, 1))} className="p-1 text-muted-foreground hover:text-foreground">
                     <ChevronRight className="h-4 w-4" />
                   </button>
@@ -226,7 +247,22 @@ export default function RegionPieChart() {
                   <button onClick={() => setTempEnd(adjustDate(tempEnd, -1))} className="p-1 text-muted-foreground hover:text-foreground">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <span className="text-sm">{format(tempEnd, "dd MMM yy")}</span>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="text-sm hover:text-primary hover:underline transition-colors cursor-pointer">
+                        {format(tempEnd, "dd MMM yy")}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="center">
+                      <Calendar
+                        mode="single"
+                        selected={tempEnd}
+                        onSelect={(date) => date && setTempEnd(date)}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <button onClick={() => setTempEnd(adjustDate(tempEnd, 1))} className="p-1 text-muted-foreground hover:text-foreground">
                     <ChevronRight className="h-4 w-4" />
                   </button>
