@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Sector } from "recharts";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { format, subDays, subMonths, startOfMonth, startOfYear } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -78,6 +78,8 @@ export default function RegionPieChart() {
   const [startDate, setStartDate] = useState(() => getDateRange("last_7_days").start);
   const [endDate, setEndDate] = useState(() => getDateRange("last_7_days").end);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [startPopoverOpen, setStartPopoverOpen] = useState(false);
+  const [endPopoverOpen, setEndPopoverOpen] = useState(false);
 
   // Temp state for sheet
   const [tempPeriod, setTempPeriod] = useState(selectedPeriod);
@@ -93,11 +95,9 @@ export default function RegionPieChart() {
 
   const handlePeriodChange = (value: string) => {
     setTempPeriod(value);
-    if (value !== "latest") {
-      const range = getDateRange(value);
-      setTempStart(range.start);
-      setTempEnd(range.end);
-    }
+    const range = getDateRange(value);
+    setTempStart(range.start);
+    setTempEnd(range.end);
   };
 
   const handleApply = () => {
@@ -220,7 +220,7 @@ export default function RegionPieChart() {
                   <button onClick={() => setTempStart(adjustDate(tempStart, -1))} className="p-1 text-muted-foreground hover:text-foreground">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <Popover>
+                  <Popover open={startPopoverOpen} onOpenChange={setStartPopoverOpen}>
                     <PopoverTrigger asChild>
                       <button className="text-sm hover:text-primary hover:underline transition-colors cursor-pointer">
                         {format(tempStart, "dd MMM yy")}
@@ -230,7 +230,10 @@ export default function RegionPieChart() {
                       <Calendar
                         mode="single"
                         selected={tempStart}
-                        onSelect={(date) => date && setTempStart(date)}
+                        onSelect={(date) => { if (date) { setTempStart(date); setStartPopoverOpen(false); } }}
+                        captionLayout="dropdown-buttons"
+                        fromYear={2025}
+                        toYear={new Date().getFullYear() + 1}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
@@ -247,7 +250,7 @@ export default function RegionPieChart() {
                   <button onClick={() => setTempEnd(adjustDate(tempEnd, -1))} className="p-1 text-muted-foreground hover:text-foreground">
                     <ChevronLeft className="h-4 w-4" />
                   </button>
-                  <Popover>
+                  <Popover open={endPopoverOpen} onOpenChange={setEndPopoverOpen}>
                     <PopoverTrigger asChild>
                       <button className="text-sm hover:text-primary hover:underline transition-colors cursor-pointer">
                         {format(tempEnd, "dd MMM yy")}
@@ -257,7 +260,10 @@ export default function RegionPieChart() {
                       <Calendar
                         mode="single"
                         selected={tempEnd}
-                        onSelect={(date) => date && setTempEnd(date)}
+                        onSelect={(date) => { if (date) { setTempEnd(date); setEndPopoverOpen(false); } }}
+                        captionLayout="dropdown-buttons"
+                        fromYear={2025}
+                        toYear={new Date().getFullYear() + 1}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
