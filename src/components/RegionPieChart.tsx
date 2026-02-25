@@ -108,20 +108,34 @@ export default function RegionPieChart() {
   };
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["region-stats"],
+    queryKey: ["vehicle-detections-by-region", format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd")],
     queryFn: async () => {
-      const { data, error } = await supabase.from("dashboard_region_stats").select("*");
+      const { data, error } = await supabase
+        .from("vehicle_detections")
+        .select("region_name")
+        .gte("detected_at", format(startDate, "yyyy-MM-dd"))
+        .lte("detected_at", format(endDate, "yyyy-MM-dd") + "T23:59:59");
       if (error) throw error;
       return data || [];
     },
   });
 
-  const chartData = useMemo(() =>
-    (data || []).map((d) => ({
-      name: d.region_name || "Unknown",
-      value: Number(d.total) || 0,
-      percentage: Number(d.percentage) || 0,
-    })), [data]);
+  const chartData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+    const counts: Record<string, number> = {};
+    data.forEach((d) => {
+      const name = d.region_name || "Unknown";
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    const total = data.length;
+    return Object.entries(counts)
+      .map(([name, value]) => ({
+        name,
+        value,
+        percentage: (value / total) * 100,
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [data]);
 
   if (isLoading) {
     return (
@@ -173,7 +187,21 @@ export default function RegionPieChart() {
                     <Cell key={i} fill={COLORS[i % COLORS.length]} style={{ outline: "none" }} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: number) => value} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-background border rounded-lg px-3 py-2 shadow-md text-sm">
+                          <span className="font-medium">{d.name}</span>{" "}
+                          <span className="text-primary font-semibold">{d.value}</span>{" "}
+                          <span className="text-muted-foreground">({d.percentage.toFixed(1)}%)</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
