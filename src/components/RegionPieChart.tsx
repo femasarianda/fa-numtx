@@ -233,7 +233,7 @@ export default function RegionPieChart() {
                         onSelect={(date) => { if (date) { setTempStart(date); setStartPopoverOpen(false); } }}
                         captionLayout="dropdown-buttons"
                         fromYear={2025}
-                        toYear={new Date().getFullYear() + 1}
+                        toYear={new Date().getFullYear()}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
@@ -263,7 +263,7 @@ export default function RegionPieChart() {
                         onSelect={(date) => { if (date) { setTempEnd(date); setEndPopoverOpen(false); } }}
                         captionLayout="dropdown-buttons"
                         fromYear={2025}
-                        toYear={new Date().getFullYear() + 1}
+                        toYear={new Date().getFullYear()}
                         initialFocus
                         className={cn("p-3 pointer-events-auto")}
                       />
