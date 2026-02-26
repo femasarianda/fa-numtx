@@ -362,20 +362,15 @@ export default function RegionPieChart() {
                   }}
                   onTouchStart={(data, index, event) => {
                     if (!isCoarsePointer) return;
-
                     clearLongPressTimeout();
+                    setActiveIndex(index);
+                    setTooltipData(data);
 
                     const nativeEvent = (event as { nativeEvent?: TouchEvent })?.nativeEvent;
                     const touch = nativeEvent?.touches?.[0];
-
                     if (touch) {
                       setTooltipPos({ x: touch.clientX, y: touch.clientY });
                     }
-
-                    longPressTimeoutRef.current = setTimeout(() => {
-                      setActiveIndex(index);
-                      setTooltipData(data);
-                    }, 220);
                   }}
                   onTouchMove={(_, index, event) => {
                     if (!isCoarsePointer || activeIndex !== index) return;
