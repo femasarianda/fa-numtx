@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Sector } from "recharts";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { format, subDays, subMonths, startOfMonth, startOfYear } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -113,6 +113,7 @@ export default function RegionPieChart() {
   const [tempPeriod, setTempPeriod] = useState(selectedPeriod);
   const [tempStart, setTempStart] = useState(startDate);
   const [tempEnd, setTempEnd] = useState(endDate);
+  const longPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleOpenSheet = () => {
     setTempPeriod(selectedPeriod);
@@ -133,6 +134,21 @@ export default function RegionPieChart() {
     setStartDate(tempStart);
     setEndDate(tempEnd);
     setSheetOpen(false);
+  };
+
+  const isCoarsePointer = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+
+  const clearLongPressTimeout = () => {
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+  };
+
+  const resetActiveSlice = () => {
+    setActiveIndex(undefined);
+    setTooltipData(null);
+    setTooltipPos(null);
   };
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -336,30 +352,50 @@ export default function RegionPieChart() {
                   activeIndex={activeIndex}
                   activeShape={renderActiveShape}
                   onMouseEnter={(data, index) => {
+                    if (isCoarsePointer) return;
                     setActiveIndex(index);
                     setTooltipData(data);
                   }}
                   onMouseLeave={() => {
-                    setActiveIndex(undefined);
-                    setTooltipData(null);
-                    setTooltipPos(null);
+                    if (isCoarsePointer) return;
+                    resetActiveSlice();
                   }}
-                  onClick={(data, index, event) => {
-                    // mobile tap: toggle aktif dan tampilkan tooltip
-                    if (activeIndex === index) {
-                      setActiveIndex(undefined);
-                      setTooltipData(null);
-                      setTooltipPos(null);
-                    } else {
+                  onTouchStart={(data, index, event) => {
+                    if (!isCoarsePointer) return;
+
+                    clearLongPressTimeout();
+
+                    const nativeEvent = (event as { nativeEvent?: TouchEvent })?.nativeEvent;
+                    const touch = nativeEvent?.touches?.[0];
+
+                    if (touch) {
+                      setTooltipPos({ x: touch.clientX, y: touch.clientY });
+                    }
+
+                    longPressTimeoutRef.current = setTimeout(() => {
                       setActiveIndex(index);
                       setTooltipData(data);
-                      if (event && (event as any).nativeEvent) {
-                        const native = (event as any).nativeEvent as TouchEvent | MouseEvent;
-                        const clientX = "touches" in native ? native.touches[0]?.clientX : (native as MouseEvent).clientX;
-                        const clientY = "touches" in native ? native.touches[0]?.clientY : (native as MouseEvent).clientY;
-                        setTooltipPos({ x: clientX ?? 0, y: clientY ?? 0 });
-                      }
+                    }, 220);
+                  }}
+                  onTouchMove={(_, index, event) => {
+                    if (!isCoarsePointer || activeIndex !== index) return;
+
+                    const nativeEvent = (event as { nativeEvent?: TouchEvent })?.nativeEvent;
+                    const touch = nativeEvent?.touches?.[0];
+
+                    if (touch) {
+                      setTooltipPos({ x: touch.clientX, y: touch.clientY });
                     }
+                  }}
+                  onTouchEnd={() => {
+                    if (!isCoarsePointer) return;
+                    clearLongPressTimeout();
+                    resetActiveSlice();
+                  }}
+                  onTouchCancel={() => {
+                    if (!isCoarsePointer) return;
+                    clearLongPressTimeout();
+                    resetActiveSlice();
                   }}
                   style={{ outline: "none", cursor: "pointer" }}
                   tabIndex={-1}
@@ -378,6 +414,10 @@ export default function RegionPieChart() {
                 <Tooltip
                   cursor={false}
                   content={({ active, payload }) => {
+                    if (isCoarsePointer) {
+                      return null;
+                    }
+
                     if (active && payload && payload.length) {
                       const d = payload[0].payload;
                       return (
@@ -388,6 +428,7 @@ export default function RegionPieChart() {
                         </div>
                       );
                     }
+
                     return null;
                   }}
                 />
@@ -395,7 +436,7 @@ export default function RegionPieChart() {
             </ResponsiveContainer>
 
             {/* Mobile tooltip overlay */}
-            {tooltipData && tooltipPos && (
+            {isCoarsePointer && tooltipData && tooltipPos && (
               <div
                 className="fixed z-50 bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm pointer-events-none"
                 style={{ top: tooltipPos.y - 60, left: tooltipPos.x - 80 }}
