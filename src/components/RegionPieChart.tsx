@@ -81,7 +81,6 @@ export default function RegionPieChart() {
   const [startPopoverOpen, setStartPopoverOpen] = useState(false);
   const [endPopoverOpen, setEndPopoverOpen] = useState(false);
 
-  // Temp state for sheet
   const [tempPeriod, setTempPeriod] = useState(selectedPeriod);
   const [tempStart, setTempStart] = useState(startDate);
   const [tempEnd, setTempEnd] = useState(endDate);
@@ -160,64 +159,13 @@ export default function RegionPieChart() {
 
   return (
     <Card className="rounded-xl shadow-sm">
-      <CardHeader><CardTitle className="text-base">Informasi Kendaraan</CardTitle></CardHeader>
-      <CardContent>
-        {chartData.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
-        ) : (
-          <div className="pt-0 pb-0">
-            <ResponsiveContainer width="100%" height={320}>
-              <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={85}
-                  dataKey="value"
-                  stroke="none"
-                  label={({ percentage }) => `${percentage.toFixed(1)}%`}
-                  labelLine={true}
-                  activeIndex={activeIndex}
-                  activeShape={renderActiveShape}
-                  onMouseEnter={(_, index) => setActiveIndex(index)}
-                  onMouseLeave={() => setActiveIndex(undefined)}
-                  onClick={(_, index) => setActiveIndex(activeIndex === index ? undefined : index)}
-                  style={{ outline: "none", cursor: "pointer" }}
-                >
-                  {chartData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="none" style={{ outline: "none" }} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const d = payload[0].payload;
-                      return (
-                        <div className="bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm">
-                          <span className="font-medium">{d.name}</span>{" "}
-                          <span className="text-primary font-semibold">{d.value}</span>{" "}
-                          <span className="text-muted-foreground">({d.percentage.toFixed(1)}%)</span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Legend
-                  wrapperStyle={{ paddingTop: "16px" }}
-                  formatter={(value: string) => <span style={{ color: "#111827" }}>{value}</span>}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {/* Date range display + calendar icon - entire area clickable */}
+      <CardHeader className="pb-0">
+        <CardTitle className="text-base">Informasi Kendaraan</CardTitle>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <button
               onClick={handleOpenSheet}
-              className="flex items-center justify-center gap-2 pt-2 w-full cursor-pointer hover:opacity-80 transition-opacity"
+              className="flex items-center justify-center gap-2 w-full cursor-pointer hover:opacity-80 transition-opacity pt-1"
             >
               <span className="text-sm text-primary font-medium">
                 {format(startDate, "dd MMM yy")} - {format(endDate, "dd MMM yy")}
@@ -244,7 +192,6 @@ export default function RegionPieChart() {
 
             <Separator className="my-4" />
 
-            {/* Start / End date controls with clickable date picker */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <p className="text-sm font-semibold text-primary mb-2">Start</p>
@@ -313,6 +260,80 @@ export default function RegionPieChart() {
             </Button>
           </SheetContent>
         </Sheet>
+      </CardHeader>
+
+      <CardContent className="pt-2 pb-3 px-3">
+        {chartData.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={280 + Math.ceil(chartData.length / 2) * 28}>
+            <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                outerRadius={typeof window !== "undefined" && window.innerWidth >= 768 ? 100 : 85}
+                dataKey="value"
+                stroke="none"
+                label={({ percentage, cx, cy, midAngle }) => {
+                  const RADIAN = Math.PI / 180;
+                  const radius = (typeof window !== "undefined" && window.innerWidth >= 768 ? 100 : 85) + 30;
+                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                  return (
+                    <text
+                      x={x}
+                      y={y}
+                      fill="#000000"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      style={{ fontSize: "clamp(13px, 3vw, 16px)", fontWeight: 500 }}
+                    >
+                      {`${percentage.toFixed(1)}%`}
+                    </text>
+                  );
+                }}
+                labelLine={false}
+                activeIndex={activeIndex}
+                activeShape={renderActiveShape}
+                onMouseEnter={(_, index) => setActiveIndex(index)}
+                onMouseLeave={() => setActiveIndex(undefined)}
+                onClick={(_, index) => setActiveIndex(activeIndex === index ? undefined : index)}
+                style={{ outline: "none", cursor: "pointer" }}
+              >
+                {chartData.map((_, i) => (
+                  <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="none" style={{ outline: "none" }} />
+                ))}
+              </Pie>
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const d = payload[0].payload;
+                    return (
+                      <div className="bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm">
+                        <span className="font-medium">{d.name}</span>{" "}
+                        <span className="text-primary font-semibold">{d.value}</span>{" "}
+                        <span style={{ color: "#000000" }}>({d.percentage.toFixed(1)}%)</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Legend
+                wrapperStyle={{ paddingTop: "16px" }}
+                layout="horizontal"
+                align="center"
+                verticalAlign="bottom"
+                formatter={(value: string) => (
+                  <span style={{ color: "#111827", fontSize: "clamp(12px, 3vw, 15px)", marginRight: "8px" }}>
+                    {value}
+                  </span>
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );
