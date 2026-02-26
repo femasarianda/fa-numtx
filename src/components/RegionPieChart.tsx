@@ -159,18 +159,18 @@ export default function RegionPieChart() {
 
   return (
     <Card className="rounded-xl shadow-sm">
-      <CardHeader className="pb-0">
+      <CardHeader className="pb-4">
         <CardTitle className="text-base">Informasi Kendaraan</CardTitle>
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <button
               onClick={handleOpenSheet}
-              className="flex items-center justify-center gap-2 w-full cursor-pointer hover:opacity-80 transition-opacity pt-1"
+              className="flex items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition-opacity mt-2 mx-auto bg-muted/60 rounded-full px-4 py-1.5"
             >
               <span className="text-sm text-primary font-medium">
                 {format(startDate, "dd MMM yy")} - {format(endDate, "dd MMM yy")}
               </span>
-              <CalendarIcon className="h-5 w-5 text-primary" />
+              <CalendarIcon className="h-4 w-4 text-primary" />
             </button>
           </SheetTrigger>
 
@@ -262,7 +262,7 @@ export default function RegionPieChart() {
         </Sheet>
       </CardHeader>
 
-      <CardContent className="pt-2 pb-3 px-3">
+      <CardContent className="pt-2 pb-4 px-6">
         {chartData.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
         ) : (
@@ -321,7 +321,7 @@ export default function RegionPieChart() {
                 }}
               />
               <Legend
-                wrapperStyle={{ paddingTop: "16px" }}
+                wrapperStyle={{ paddingTop: "16px", paddingLeft: "8px", paddingRight: "8px" }}
                 layout="horizontal"
                 align="center"
                 verticalAlign="bottom"
