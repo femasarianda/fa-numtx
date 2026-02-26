@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Sector } from "recharts";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { format, subDays, subMonths, startOfMonth, startOfYear } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -136,6 +136,8 @@ export default function RegionPieChart() {
     setSheetOpen(false);
   };
 
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+
   const resetActiveSlice = () => {
     setActiveIndex(undefined);
     setTooltipData(null);
@@ -143,30 +145,35 @@ export default function RegionPieChart() {
     setIsTouchInteraction(false);
   };
 
+  const activateSlice = (index: number) => {
+    if (!chartData[index]) return;
+    setActiveIndex(index);
+    setTooltipData(chartData[index]);
+    setTooltipPos(null);
+  };
+
+  // Reset on scroll or touch outside chart area
   useEffect(() => {
     if (activeIndex === undefined) return;
 
-    const handleRelease = () => {
-      setActiveIndex(undefined);
-      setTooltipData(null);
-      setTooltipPos(null);
-      setIsTouchInteraction(false);
+    const handleScroll = () => resetActiveSlice();
+    const handleOutsideTouch = (e: TouchEvent | MouseEvent) => {
+      const container = chartContainerRef.current;
+      if (container && !container.contains(e.target as Node)) {
+        resetActiveSlice();
+      }
     };
 
-    window.addEventListener("pointerup", handleRelease, true);
-    window.addEventListener("pointercancel", handleRelease, true);
-    window.addEventListener("touchend", handleRelease, { passive: true });
-    window.addEventListener("touchcancel", handleRelease, { passive: true });
-    window.addEventListener("scroll", handleRelease, { passive: true });
-    window.addEventListener("blur", handleRelease);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener("touchstart", handleOutsideTouch, { passive: true });
+    window.addEventListener("mousedown", handleOutsideTouch);
+    window.addEventListener("blur", resetActiveSlice);
 
     return () => {
-      window.removeEventListener("pointerup", handleRelease, true);
-      window.removeEventListener("pointercancel", handleRelease, true);
-      window.removeEventListener("touchend", handleRelease);
-      window.removeEventListener("touchcancel", handleRelease);
-      window.removeEventListener("scroll", handleRelease);
-      window.removeEventListener("blur", handleRelease);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("touchstart", handleOutsideTouch);
+      window.removeEventListener("mousedown", handleOutsideTouch);
+      window.removeEventListener("blur", resetActiveSlice);
     };
   }, [activeIndex]);
 
@@ -332,8 +339,8 @@ export default function RegionPieChart() {
         </Sheet>
       </div>
 
-      {/* Div 3: Pie chart saja (tanpa legend) */}
-      <div className="px-6 pt-3.5 pb-0 relative">
+      {/* Div 3: Pie chart + legend area */}
+      <div ref={chartContainerRef} className="px-6 pt-3.5 pb-0 relative">
         {chartData.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
         ) : (
@@ -349,7 +356,7 @@ export default function RegionPieChart() {
                   outerRadius={typeof window !== "undefined" && window.innerWidth >= 768 ? 115 : 95}
                   dataKey="value"
                   stroke="none"
-                  label={({ percentage, cx, cy, midAngle }) => {
+                  label={({ percentage, cx, cy, midAngle, index }) => {
                     const RADIAN = Math.PI / 180;
                     const radius = (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 90) + 25;
                     const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -358,10 +365,21 @@ export default function RegionPieChart() {
                       <text
                         x={x}
                         y={y}
-                        fill="#000000"
+                        fill={activeIndex === index ? "hsl(var(--primary))" : "#000000"}
                         textAnchor="middle"
                         dominantBaseline="central"
-                        style={{ fontSize: "clamp(12px, 3vw, 14px)", fontWeight: 500 }}
+                        style={{ fontSize: "clamp(12px, 3vw, 14px)", fontWeight: activeIndex === index ? 700 : 500, cursor: "pointer" }}
+                        onMouseEnter={() => {
+                          if (!isTouchInteraction) activateSlice(index);
+                        }}
+                        onMouseLeave={() => {
+                          if (!isTouchInteraction) resetActiveSlice();
+                        }}
+                        onTouchStart={(e) => {
+                          e.stopPropagation();
+                          setIsTouchInteraction(true);
+                          activateSlice(index);
+                        }}
                       >
                         {`${percentage.toFixed(1)}%`}
                       </text>
@@ -370,10 +388,9 @@ export default function RegionPieChart() {
                   labelLine={false}
                   activeIndex={activeIndex}
                   activeShape={renderActiveShape}
-                  onMouseEnter={(data, index) => {
+                  onMouseEnter={(_, index) => {
                     if (isTouchInteraction) return;
-                    setActiveIndex(index);
-                    setTooltipData(data);
+                    activateSlice(index);
                   }}
                   onMouseLeave={() => {
                     if (isTouchInteraction) return;
@@ -381,29 +398,16 @@ export default function RegionPieChart() {
                   }}
                   onTouchStart={(data, index, event) => {
                     setIsTouchInteraction(true);
-                    setActiveIndex(index);
-                    setTooltipData(data);
-
+                    activateSlice(index);
                     const nativeEvent = (event as { nativeEvent?: TouchEvent })?.nativeEvent;
                     const touch = nativeEvent?.touches?.[0];
                     if (touch) {
                       setTooltipPos({ x: touch.clientX, y: touch.clientY });
                     }
                   }}
-                  onTouchMove={(_, index, event) => {
-                    if (activeIndex !== index) return;
-
-                    const nativeEvent = (event as { nativeEvent?: TouchEvent })?.nativeEvent;
-                    const touch = nativeEvent?.touches?.[0];
-
-                    if (touch) {
-                      setTooltipPos({ x: touch.clientX, y: touch.clientY });
-                    } else {
-                      resetActiveSlice();
-                    }
-                  }}
-                  onTouchEnd={resetActiveSlice}
-                  onTouchCancel={resetActiveSlice}
+                  onTouchMove={() => {}}
+                  onTouchEnd={() => {}}
+                  onTouchCancel={() => {}}
                   style={{ outline: "none", cursor: "pointer" }}
                   tabIndex={-1}
                   focusable={false}
@@ -421,36 +425,31 @@ export default function RegionPieChart() {
                 <Tooltip
                   cursor={false}
                   content={({ active, payload }) => {
-                    if (isTouchInteraction) {
-                      return null;
-                    }
-
+                    if (isTouchInteraction) return null;
                     if (active && payload && payload.length) {
                       const d = payload[0].payload;
                       return (
                         <div className="bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm">
                           <span className="font-medium">{d.name}</span>{" "}
                           <span className="text-primary font-semibold">{d.value}</span>{" "}
-                          <span style={{ color: "#000000" }}>({d.percentage.toFixed(1)}%)</span>
+                          <span className="text-foreground">({d.percentage.toFixed(1)}%)</span>
                         </div>
                       );
                     }
-
                     return null;
                   }}
                 />
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Mobile tooltip overlay */}
-            {isTouchInteraction && tooltipData && tooltipPos && (
+            {/* Tooltip overlay for touch & persistent desktop */}
+            {activeIndex !== undefined && tooltipData && (
               <div
-                className="fixed z-50 bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm pointer-events-none"
-                style={{ top: tooltipPos.y - 60, left: tooltipPos.x - 80 }}
+                className="absolute left-1/2 -translate-x-1/2 top-2 z-50 bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm pointer-events-none"
               >
                 <span className="font-medium">{tooltipData.name}</span>{" "}
                 <span className="text-primary font-semibold">{tooltipData.value}</span>{" "}
-                <span style={{ color: "#000000" }}>({tooltipData.percentage.toFixed(1)}%)</span>
+                <span className="text-foreground">({tooltipData.percentage.toFixed(1)}%)</span>
               </div>
             )}
           </>
@@ -461,12 +460,29 @@ export default function RegionPieChart() {
       {chartData.length > 0 && (
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-6 pb-6 pt-4">
           {chartData.map((entry, i) => (
-            <div key={entry.name} className="flex items-center gap-1.5">
+            <div
+              key={entry.name}
+              className="flex items-center gap-1.5 cursor-pointer"
+              onMouseEnter={() => { if (!isTouchInteraction) activateSlice(i); }}
+              onMouseLeave={() => { if (!isTouchInteraction) resetActiveSlice(); }}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                setIsTouchInteraction(true);
+                activateSlice(i);
+              }}
+            >
               <div
                 className="w-3 h-3 rounded-sm flex-shrink-0"
                 style={{ backgroundColor: COLORS[getColorIndex(i, chartData.length)] }}
               />
-              <span style={{ color: "#111827", fontSize: "clamp(12px, 3vw, 14px)" }}>
+              <span
+                className="text-foreground"
+                style={{
+                  fontSize: "clamp(12px, 3vw, 14px)",
+                  fontWeight: activeIndex === i ? 700 : 400,
+                  color: activeIndex === i ? "hsl(var(--primary))" : undefined,
+                }}
+              >
                 {entry.name}
               </span>
             </div>
