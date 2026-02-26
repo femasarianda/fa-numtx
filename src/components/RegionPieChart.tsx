@@ -68,7 +68,7 @@ function adjustDate(date: Date, delta: number): Date {
 const renderActiveShape = (props: any) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
   return (
-    <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 6} startAngle={startAngle} endAngle={endAngle} fill={fill} />
+    <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} stroke="none" />
   );
 };
 
@@ -165,15 +165,16 @@ export default function RegionPieChart() {
         {chartData.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
         ) : (
-          <div className="pt-10 pb-4">
+          <div className="pt-6 pb-2">
             <ResponsiveContainer width="100%" height={320}>
-              <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+              <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                 <Pie
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  outerRadius={75}
+                  outerRadius={85}
                   dataKey="value"
+                  stroke="none"
                   label={({ percentage }) => `${percentage.toFixed(1)}%`}
                   labelLine={true}
                   activeIndex={activeIndex}
@@ -184,7 +185,7 @@ export default function RegionPieChart() {
                   style={{ outline: "none", cursor: "pointer" }}
                 >
                   {chartData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} style={{ outline: "none" }} />
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="none" style={{ outline: "none" }} />
                   ))}
                 </Pie>
                 <Tooltip
@@ -192,7 +193,7 @@ export default function RegionPieChart() {
                     if (active && payload && payload.length) {
                       const d = payload[0].payload;
                       return (
-                        <div className="bg-background border rounded-lg px-3 py-2 shadow-md text-sm">
+                        <div className="bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm">
                           <span className="font-medium">{d.name}</span>{" "}
                           <span className="text-primary font-semibold">{d.value}</span>{" "}
                           <span className="text-muted-foreground">({d.percentage.toFixed(1)}%)</span>
@@ -202,7 +203,10 @@ export default function RegionPieChart() {
                     return null;
                   }}
                 />
-                <Legend />
+                <Legend
+                  wrapperStyle={{ paddingTop: "16px" }}
+                  formatter={(value: string) => <span style={{ color: "#111827" }}>{value}</span>}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
