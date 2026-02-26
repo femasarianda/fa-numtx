@@ -300,6 +300,8 @@ export default function RegionPieChart() {
                 onMouseLeave={() => setActiveIndex(undefined)}
                 onClick={(_, index) => setActiveIndex(activeIndex === index ? undefined : index)}
                 style={{ outline: "none", cursor: "pointer" }}
+                tabIndex={-1}
+                focusable={false}
               >
                 {chartData.map((_, i) => (
                   <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="none" style={{ outline: "none" }} />
