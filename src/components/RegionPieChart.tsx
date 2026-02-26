@@ -267,7 +267,7 @@ export default function RegionPieChart() {
           <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
         ) : (
           <ResponsiveContainer width="100%" height={280 + Math.ceil(chartData.length / 2) * 28}>
-            <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+            <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }} accessibilityLayer={false}>
               <Pie
                 data={chartData}
                 cx="50%"
@@ -308,6 +308,7 @@ export default function RegionPieChart() {
                 ))}
               </Pie>
               <Tooltip
+                cursor={false}
                 content={({ active, payload }) => {
                   if (active && payload && payload.length) {
                     const d = payload[0].payload;
