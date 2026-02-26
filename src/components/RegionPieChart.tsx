@@ -101,7 +101,7 @@ const renderActiveShape = (props: any) => {
 
 export default function RegionPieChart() {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
-  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  
   const [tooltipData, setTooltipData] = useState<any>(null);
   const [isTouchInteraction, setIsTouchInteraction] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("last_7_days");
@@ -141,7 +141,6 @@ export default function RegionPieChart() {
   const resetActiveSlice = () => {
     setActiveIndex(undefined);
     setTooltipData(null);
-    setTooltipPos(null);
     setIsTouchInteraction(false);
   };
 
@@ -149,7 +148,6 @@ export default function RegionPieChart() {
     if (!chartData[index]) return;
     setActiveIndex(index);
     setTooltipData(chartData[index]);
-    setTooltipPos(null);
   };
 
   // Reset on scroll or touch outside chart area
@@ -396,14 +394,9 @@ export default function RegionPieChart() {
                     if (isTouchInteraction) return;
                     resetActiveSlice();
                   }}
-                  onTouchStart={(data, index, event) => {
+                  onTouchStart={(data, index) => {
                     setIsTouchInteraction(true);
                     activateSlice(index);
-                    const nativeEvent = (event as { nativeEvent?: TouchEvent })?.nativeEvent;
-                    const touch = nativeEvent?.touches?.[0];
-                    if (touch) {
-                      setTooltipPos({ x: touch.clientX, y: touch.clientY });
-                    }
                   }}
                   onTouchMove={() => {}}
                   onTouchEnd={() => {}}
@@ -422,30 +415,13 @@ export default function RegionPieChart() {
                     />
                   ))}
                 </Pie>
-                <Tooltip
-                  cursor={false}
-                  content={({ active, payload }) => {
-                    if (isTouchInteraction) return null;
-                    if (active && payload && payload.length) {
-                      const d = payload[0].payload;
-                      return (
-                        <div className="bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm">
-                          <span className="font-medium">{d.name}</span>{" "}
-                          <span className="text-primary font-semibold">{d.value}</span>{" "}
-                          <span className="text-foreground">({d.percentage.toFixed(1)}%)</span>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
+                <Tooltip cursor={false} content={() => null} />
               </PieChart>
             </ResponsiveContainer>
 
-            {/* Tooltip overlay for touch & persistent desktop */}
             {activeIndex !== undefined && tooltipData && (
               <div
-                className="absolute left-1/2 -translate-x-1/2 top-2 z-50 bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm pointer-events-none"
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm pointer-events-none"
               >
                 <span className="font-medium">{tooltipData.name}</span>{" "}
                 <span className="text-primary font-semibold">{tooltipData.value}</span>{" "}
