@@ -103,6 +103,7 @@ export default function RegionPieChart() {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const [tooltipData, setTooltipData] = useState<any>(null);
+  const [isTouchInteraction, setIsTouchInteraction] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("last_7_days");
   const [startDate, setStartDate] = useState(() => getDateRange("last_7_days").start);
   const [endDate, setEndDate] = useState(() => getDateRange("last_7_days").end);
@@ -135,33 +136,39 @@ export default function RegionPieChart() {
     setSheetOpen(false);
   };
 
-  const isCoarsePointer = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
-
   const resetActiveSlice = () => {
     setActiveIndex(undefined);
     setTooltipData(null);
     setTooltipPos(null);
+    setIsTouchInteraction(false);
   };
 
   useEffect(() => {
-    if (!isCoarsePointer || activeIndex === undefined) return;
+    if (activeIndex === undefined) return;
 
     const handleRelease = () => {
       setActiveIndex(undefined);
       setTooltipData(null);
       setTooltipPos(null);
+      setIsTouchInteraction(false);
     };
 
+    window.addEventListener("pointerup", handleRelease, true);
+    window.addEventListener("pointercancel", handleRelease, true);
     window.addEventListener("touchend", handleRelease, { passive: true });
     window.addEventListener("touchcancel", handleRelease, { passive: true });
     window.addEventListener("scroll", handleRelease, { passive: true });
+    window.addEventListener("blur", handleRelease);
 
     return () => {
+      window.removeEventListener("pointerup", handleRelease, true);
+      window.removeEventListener("pointercancel", handleRelease, true);
       window.removeEventListener("touchend", handleRelease);
       window.removeEventListener("touchcancel", handleRelease);
       window.removeEventListener("scroll", handleRelease);
+      window.removeEventListener("blur", handleRelease);
     };
-  }, [isCoarsePointer, activeIndex]);
+  }, [activeIndex]);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["vehicle-detections-by-region", format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd")],
@@ -364,16 +371,16 @@ export default function RegionPieChart() {
                   activeIndex={activeIndex}
                   activeShape={renderActiveShape}
                   onMouseEnter={(data, index) => {
-                    if (isCoarsePointer) return;
+                    if (isTouchInteraction) return;
                     setActiveIndex(index);
                     setTooltipData(data);
                   }}
                   onMouseLeave={() => {
-                    if (isCoarsePointer) return;
+                    if (isTouchInteraction) return;
                     resetActiveSlice();
                   }}
                   onTouchStart={(data, index, event) => {
-                    if (!isCoarsePointer) return;
+                    setIsTouchInteraction(true);
                     setActiveIndex(index);
                     setTooltipData(data);
 
@@ -384,7 +391,7 @@ export default function RegionPieChart() {
                     }
                   }}
                   onTouchMove={(_, index, event) => {
-                    if (!isCoarsePointer || activeIndex !== index) return;
+                    if (activeIndex !== index) return;
 
                     const nativeEvent = (event as { nativeEvent?: TouchEvent })?.nativeEvent;
                     const touch = nativeEvent?.touches?.[0];
@@ -395,14 +402,8 @@ export default function RegionPieChart() {
                       resetActiveSlice();
                     }
                   }}
-                  onTouchEnd={() => {
-                    if (!isCoarsePointer) return;
-                    resetActiveSlice();
-                  }}
-                  onTouchCancel={() => {
-                    if (!isCoarsePointer) return;
-                    resetActiveSlice();
-                  }}
+                  onTouchEnd={resetActiveSlice}
+                  onTouchCancel={resetActiveSlice}
                   style={{ outline: "none", cursor: "pointer" }}
                   tabIndex={-1}
                   focusable={false}
@@ -420,7 +421,7 @@ export default function RegionPieChart() {
                 <Tooltip
                   cursor={false}
                   content={({ active, payload }) => {
-                    if (isCoarsePointer) {
+                    if (isTouchInteraction) {
                       return null;
                     }
 
@@ -442,7 +443,7 @@ export default function RegionPieChart() {
             </ResponsiveContainer>
 
             {/* Mobile tooltip overlay */}
-            {isCoarsePointer && tooltipData && tooltipPos && (
+            {isTouchInteraction && tooltipData && tooltipPos && (
               <div
                 className="fixed z-50 bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm pointer-events-none"
                 style={{ top: tooltipPos.y - 60, left: tooltipPos.x - 80 }}
