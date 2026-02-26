@@ -85,3 +85,10 @@
     font-family: 'Inter', sans-serif;
   }
 }
+
+.recharts-sector {
+  outline: none !important;
+}
+.recharts-layer {
+  outline: none !important;
+}

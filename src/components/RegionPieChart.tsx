@@ -15,7 +15,34 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
-const COLORS = ["#4F46E5", "#6366F1", "#818CF8", "#A5B4FC", "#C7D2FE", "#E0E7FF", "#8B5CF6", "#7C3AED"];
+const COLORS = [
+  "#A5B4FC", // (Indigo 300)
+  "#818CF8", // (Indigo 400)
+  "#6366F1", // (Indigo 500)
+  "#4F46E5", // (Indigo 600)
+  "#4338CA", // (Indigo 700)
+  "#5B21B6", // (Violet 900)
+  "#6D28D9", // (Violet 800)
+  "#7C3AED", // (Violet 700)
+  "#8B5CF6", // (Violet 600)
+  "#A78BFA", // (Violet 400)
+  "#C4B5FD", // (Violet 300)
+];
+
+
+function getColorIndex(index: number, total: number): number {
+  const len = COLORS.length;
+
+  if (index < len) {
+    return index;
+  }
+
+  if (index >= len && index < len + 2) {
+    return (index - len) + 2;
+  }
+
+  return index % len;
+}
 
 const PERIOD_OPTIONS = [
   { value: "latest", label: "Latest" },
@@ -74,6 +101,8 @@ const renderActiveShape = (props: any) => {
 
 export default function RegionPieChart() {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [tooltipData, setTooltipData] = useState<any>(null);
   const [selectedPeriod, setSelectedPeriod] = useState("last_7_days");
   const [startDate, setStartDate] = useState(() => getDateRange("last_7_days").start);
   const [endDate, setEndDate] = useState(() => getDateRange("last_7_days").end);
@@ -180,14 +209,14 @@ export default function RegionPieChart() {
             </button>
           </SheetTrigger>
 
-          <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto mx-auto lg:max-w-[33vw]">
-            <SheetHeader className="pb-4">
+          <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto mx-auto lg:max-w-[33vw] lg:rounded-2xl pt-4 lg:bottom-auto lg:top-1/2 lg:-translate-y-1/2">
+            <SheetHeader className="pb-2">
               <SheetTitle className="text-center">Periode</SheetTitle>
             </SheetHeader>
 
-            <RadioGroup value={tempPeriod} onValueChange={handlePeriodChange} className="space-y-1">
+            <RadioGroup value={tempPeriod} onValueChange={handlePeriodChange} className="space-y-0">
               {PERIOD_OPTIONS.map((opt) => (
-                <div key={opt.value} className="flex items-center justify-between py-3 px-1">
+                <div key={opt.value} className="flex items-center justify-between py-1.5 px-1">
                   <Label htmlFor={opt.value} className="text-sm font-normal cursor-pointer flex-1">
                     {opt.label}
                   </Label>
@@ -196,11 +225,11 @@ export default function RegionPieChart() {
               ))}
             </RadioGroup>
 
-            <Separator className="my-4" />
+            <Separator className="my-2" />
 
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
-                <p className="text-sm font-semibold text-primary mb-2">Start</p>
+                <p className="text-sm font-semibold text-primary mb-2 text-center">Start</p>
                 <div className="flex items-center justify-between gap-1">
                   <button onClick={() => setTempStart(adjustDate(tempStart, -1))} className="p-1 text-muted-foreground hover:text-foreground">
                     <ChevronLeft className="h-4 w-4" />
@@ -230,7 +259,7 @@ export default function RegionPieChart() {
                 </div>
               </div>
               <div>
-                <p className="text-sm font-semibold text-primary mb-2">End</p>
+                <p className="text-sm font-semibold text-primary mb-2 text-center">End</p>
                 <div className="flex items-center justify-between gap-1">
                   <button onClick={() => setTempEnd(adjustDate(tempEnd, -1))} className="p-1 text-muted-foreground hover:text-foreground">
                     <ChevronLeft className="h-4 w-4" />
@@ -269,72 +298,114 @@ export default function RegionPieChart() {
       </div>
 
       {/* Div 3: Pie chart saja (tanpa legend) */}
-      {/* Div 3: Pie chart saja (tanpa legend) */}
-      <div className="px-6 pt-3.5 pb-0">
+      <div className="px-6 pt-3.5 pb-0 relative">
         {chartData.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
         ) : (
-          <ResponsiveContainer width="100%" height={
-            (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 95) * 2 + 70
-          }>
-            <PieChart margin={{ top: 30, right: 50, bottom: 30, left: 50 }} accessibilityLayer={false}>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                outerRadius={typeof window !== "undefined" && window.innerWidth >= 768 ? 115 : 95}
-                dataKey="value"
-                stroke="none"
-                label={({ percentage, cx, cy, midAngle }) => {
-                  const RADIAN = Math.PI / 180;
-                  const radius = (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 90) + 25;
-                  const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                  const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                  return (
-                    <text
-                      x={x}
-                      y={y}
-                      fill="#000000"
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      style={{ fontSize: "clamp(12px, 3vw, 14px)", fontWeight: 500 }}
-                    >
-                      {`${percentage.toFixed(1)}%`}
-                    </text>
-                  );
-                }}
-                labelLine={false}
-                activeIndex={activeIndex}
-                activeShape={renderActiveShape}
-                onMouseEnter={(_, index) => setActiveIndex(index)}
-                onMouseLeave={() => setActiveIndex(undefined)}
-                onClick={(_, index) => setActiveIndex(activeIndex === index ? undefined : index)}
-                style={{ outline: "none", cursor: "pointer" }}
-                tabIndex={-1}
-                focusable={false}
-              >
-                {chartData.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} stroke="none" style={{ outline: "none" }} />
-                ))}
-              </Pie>
-              <Tooltip
-                cursor={false}
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    const d = payload[0].payload;
+          <>
+            <ResponsiveContainer width="100%" height={
+              (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 95) * 2 + 70
+            }>
+              <PieChart margin={{ top: 30, right: 50, bottom: 30, left: 50 }} accessibilityLayer={false}>
+                <Pie
+                  data={chartData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={typeof window !== "undefined" && window.innerWidth >= 768 ? 115 : 95}
+                  dataKey="value"
+                  stroke="none"
+                  label={({ percentage, cx, cy, midAngle }) => {
+                    const RADIAN = Math.PI / 180;
+                    const radius = (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 90) + 25;
+                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
                     return (
-                      <div className="bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm">
-                        <span className="font-medium">{d.name}</span>{" "}
-                        <span className="text-primary font-semibold">{d.value}</span>{" "}
-                        <span style={{ color: "#000000" }}>({d.percentage.toFixed(1)}%)</span>
-                      </div>
+                      <text
+                        x={x}
+                        y={y}
+                        fill="#000000"
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        style={{ fontSize: "clamp(12px, 3vw, 14px)", fontWeight: 500 }}
+                      >
+                        {`${percentage.toFixed(1)}%`}
+                      </text>
                     );
-                  }
-                  return null;
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+                  }}
+                  labelLine={false}
+                  activeIndex={activeIndex}
+                  activeShape={renderActiveShape}
+                  onMouseEnter={(data, index) => {
+                    setActiveIndex(index);
+                    setTooltipData(data);
+                  }}
+                  onMouseLeave={() => {
+                    setActiveIndex(undefined);
+                    setTooltipData(null);
+                    setTooltipPos(null);
+                  }}
+                  onClick={(data, index, event) => {
+                    // mobile tap: toggle aktif dan tampilkan tooltip
+                    if (activeIndex === index) {
+                      setActiveIndex(undefined);
+                      setTooltipData(null);
+                      setTooltipPos(null);
+                    } else {
+                      setActiveIndex(index);
+                      setTooltipData(data);
+                      if (event && (event as any).nativeEvent) {
+                        const native = (event as any).nativeEvent as TouchEvent | MouseEvent;
+                        const clientX = "touches" in native ? native.touches[0]?.clientX : (native as MouseEvent).clientX;
+                        const clientY = "touches" in native ? native.touches[0]?.clientY : (native as MouseEvent).clientY;
+                        setTooltipPos({ x: clientX ?? 0, y: clientY ?? 0 });
+                      }
+                    }
+                  }}
+                  style={{ outline: "none", cursor: "pointer" }}
+                  tabIndex={-1}
+                  focusable={false}
+                >
+                  {chartData.map((_, i) => (
+                    <Cell
+                      key={i}
+                      fill={COLORS[getColorIndex(i, chartData.length)]}
+                      stroke="none"
+                      style={{ outline: "none" }}
+                      tabIndex={-1}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip
+                  cursor={false}
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const d = payload[0].payload;
+                      return (
+                        <div className="bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm">
+                          <span className="font-medium">{d.name}</span>{" "}
+                          <span className="text-primary font-semibold">{d.value}</span>{" "}
+                          <span style={{ color: "#000000" }}>({d.percentage.toFixed(1)}%)</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+
+            {/* Mobile tooltip overlay */}
+            {tooltipData && tooltipPos && (
+              <div
+                className="fixed z-50 bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm pointer-events-none"
+                style={{ top: tooltipPos.y - 60, left: tooltipPos.x - 80 }}
+              >
+                <span className="font-medium">{tooltipData.name}</span>{" "}
+                <span className="text-primary font-semibold">{tooltipData.value}</span>{" "}
+                <span style={{ color: "#000000" }}>({tooltipData.percentage.toFixed(1)}%)</span>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -345,7 +416,7 @@ export default function RegionPieChart() {
             <div key={entry.name} className="flex items-center gap-1.5">
               <div
                 className="w-3 h-3 rounded-sm flex-shrink-0"
-                style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                style={{ backgroundColor: COLORS[getColorIndex(i, chartData.length)] }}
               />
               <span style={{ color: "#111827", fontSize: "clamp(12px, 3vw, 14px)" }}>
                 {entry.name}
