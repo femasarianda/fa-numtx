@@ -17,7 +17,7 @@ export default function Dashboard() {
   return (
     <Layout>
       <h1 className="text-2xl font-bold text-foreground mb-6">Dashboard</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <Suspense fallback={<CardSkeleton />}>
           <VideoPlayer />
         </Suspense>

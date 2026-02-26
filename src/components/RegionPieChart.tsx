@@ -159,13 +159,19 @@ export default function RegionPieChart() {
 
   return (
     <Card className="rounded-xl shadow-sm">
-      <CardHeader className="pb-4">
+
+      {/* Div 1: Judul */}
+      <CardHeader className="pb-0">
         <CardTitle className="text-base">Informasi Kendaraan</CardTitle>
+      </CardHeader>
+
+      {/* Div 2: Tombol tanggal */}
+      <div className="flex justify-center px-6 pt-4 pb-0">
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <button
               onClick={handleOpenSheet}
-              className="flex items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition-opacity mt-2 mx-auto bg-muted/60 rounded-full px-4 py-1.5"
+              className="flex items-center gap-2 cursor-pointer hover:opacity-60 transition-opacity bg-muted/90 rounded-full px-4 py-1.5"
             >
               <span className="text-sm text-primary font-medium">
                 {format(startDate, "dd MMM yy")} - {format(endDate, "dd MMM yy")}
@@ -260,24 +266,28 @@ export default function RegionPieChart() {
             </Button>
           </SheetContent>
         </Sheet>
-      </CardHeader>
+      </div>
 
-      <CardContent className="pt-2 pb-4 px-6">
+      {/* Div 3: Pie chart saja (tanpa legend) */}
+      {/* Div 3: Pie chart saja (tanpa legend) */}
+      <div className="px-6 pt-3.5 pb-0">
         {chartData.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
         ) : (
-          <ResponsiveContainer width="100%" height={280 + Math.ceil(chartData.length / 2) * 28}>
-            <PieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }} accessibilityLayer={false}>
+          <ResponsiveContainer width="100%" height={
+            (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 95) * 2 + 70
+          }>
+            <PieChart margin={{ top: 30, right: 50, bottom: 30, left: 50 }} accessibilityLayer={false}>
               <Pie
                 data={chartData}
                 cx="50%"
                 cy="50%"
-                outerRadius={typeof window !== "undefined" && window.innerWidth >= 768 ? 100 : 85}
+                outerRadius={typeof window !== "undefined" && window.innerWidth >= 768 ? 115 : 95}
                 dataKey="value"
                 stroke="none"
                 label={({ percentage, cx, cy, midAngle }) => {
                   const RADIAN = Math.PI / 180;
-                  const radius = (typeof window !== "undefined" && window.innerWidth >= 768 ? 100 : 85) + 30;
+                  const radius = (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 90) + 25;
                   const x = cx + radius * Math.cos(-midAngle * RADIAN);
                   const y = cy + radius * Math.sin(-midAngle * RADIAN);
                   return (
@@ -287,7 +297,7 @@ export default function RegionPieChart() {
                       fill="#000000"
                       textAnchor="middle"
                       dominantBaseline="central"
-                      style={{ fontSize: "clamp(13px, 3vw, 16px)", fontWeight: 500 }}
+                      style={{ fontSize: "clamp(12px, 3vw, 14px)", fontWeight: 500 }}
                     >
                       {`${percentage.toFixed(1)}%`}
                     </text>
@@ -323,21 +333,28 @@ export default function RegionPieChart() {
                   return null;
                 }}
               />
-              <Legend
-                wrapperStyle={{ paddingTop: "16px", paddingLeft: "8px", paddingRight: "8px" }}
-                layout="horizontal"
-                align="center"
-                verticalAlign="bottom"
-                formatter={(value: string) => (
-                  <span style={{ color: "#111827", fontSize: "clamp(12px, 3vw, 15px)", marginRight: "8px" }}>
-                    {value}
-                  </span>
-                )}
-              />
             </PieChart>
           </ResponsiveContainer>
         )}
-      </CardContent>
+      </div>
+
+      {/* Div 4: Legend nama kota/kabupaten */}
+      {chartData.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-6 pb-6 pt-4">
+          {chartData.map((entry, i) => (
+            <div key={entry.name} className="flex items-center gap-1.5">
+              <div
+                className="w-3 h-3 rounded-sm flex-shrink-0"
+                style={{ backgroundColor: COLORS[i % COLORS.length] }}
+              />
+              <span style={{ color: "#111827", fontSize: "clamp(12px, 3vw, 14px)" }}>
+                {entry.name}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
     </Card>
   );
 }
