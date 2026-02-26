@@ -165,7 +165,7 @@ export default function RegionPieChart() {
         {chartData.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
         ) : (
-          <div className="pt-6 pb-2">
+          <div className="pt-0 pb-0">
             <ResponsiveContainer width="100%" height={320}>
               <PieChart margin={{ top: 10, right: 10, bottom: 10, left: 10 }}>
                 <Pie
