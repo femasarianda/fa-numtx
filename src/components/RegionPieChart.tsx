@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, Sector } from "recharts";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format, subDays, subMonths, startOfMonth, startOfYear } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -113,7 +113,6 @@ export default function RegionPieChart() {
   const [tempPeriod, setTempPeriod] = useState(selectedPeriod);
   const [tempStart, setTempStart] = useState(startDate);
   const [tempEnd, setTempEnd] = useState(endDate);
-  const longPressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleOpenSheet = () => {
     setTempPeriod(selectedPeriod);
@@ -138,18 +137,31 @@ export default function RegionPieChart() {
 
   const isCoarsePointer = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 
-  const clearLongPressTimeout = () => {
-    if (longPressTimeoutRef.current) {
-      clearTimeout(longPressTimeoutRef.current);
-      longPressTimeoutRef.current = null;
-    }
-  };
-
   const resetActiveSlice = () => {
     setActiveIndex(undefined);
     setTooltipData(null);
     setTooltipPos(null);
   };
+
+  useEffect(() => {
+    if (!isCoarsePointer || activeIndex === undefined) return;
+
+    const handleRelease = () => {
+      setActiveIndex(undefined);
+      setTooltipData(null);
+      setTooltipPos(null);
+    };
+
+    window.addEventListener("touchend", handleRelease, { passive: true });
+    window.addEventListener("touchcancel", handleRelease, { passive: true });
+    window.addEventListener("scroll", handleRelease, { passive: true });
+
+    return () => {
+      window.removeEventListener("touchend", handleRelease);
+      window.removeEventListener("touchcancel", handleRelease);
+      window.removeEventListener("scroll", handleRelease);
+    };
+  }, [isCoarsePointer, activeIndex]);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["vehicle-detections-by-region", format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd")],
@@ -362,7 +374,6 @@ export default function RegionPieChart() {
                   }}
                   onTouchStart={(data, index, event) => {
                     if (!isCoarsePointer) return;
-                    clearLongPressTimeout();
                     setActiveIndex(index);
                     setTooltipData(data);
 
@@ -380,16 +391,16 @@ export default function RegionPieChart() {
 
                     if (touch) {
                       setTooltipPos({ x: touch.clientX, y: touch.clientY });
+                    } else {
+                      resetActiveSlice();
                     }
                   }}
                   onTouchEnd={() => {
                     if (!isCoarsePointer) return;
-                    clearLongPressTimeout();
                     resetActiveSlice();
                   }}
                   onTouchCancel={() => {
                     if (!isCoarsePointer) return;
-                    clearLongPressTimeout();
                     resetActiveSlice();
                   }}
                   style={{ outline: "none", cursor: "pointer" }}
