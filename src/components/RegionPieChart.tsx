@@ -154,6 +154,7 @@ export default function RegionPieChart() {
   // Reset ketika scroll atau klik/tap di luar chart dan legend
   useEffect(() => {
     const handleScroll = () => {
+      activeIndexRef.current = undefined;
       setActiveIndex(undefined);
       setTooltipData(null);
     };
@@ -161,6 +162,7 @@ export default function RegionPieChart() {
     const handleOutside = (e: TouchEvent | MouseEvent) => {
       const container = chartContainerRef.current;
       if (container && !container.contains(e.target as Node)) {
+        activeIndexRef.current = undefined;
         setActiveIndex(undefined);
         setTooltipData(null);
       }
@@ -396,7 +398,6 @@ export default function RegionPieChart() {
               }>
                 <PieChart margin={{ top: 30, right: 50, bottom: 30, left: 50 }} accessibilityLayer={false}>
                   <Pie
-                    key={activeIndex ?? -1}
                     data={chartData}
                     cx="50%"
                     cy="50%"
