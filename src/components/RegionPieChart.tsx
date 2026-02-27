@@ -109,6 +109,7 @@ interface TooltipData {
 
 export default function RegionPieChart() {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
+  const [pieKey, setPieKey] = useState(0);
   interface TooltipData {
     name: string;
     value: number;
@@ -142,6 +143,7 @@ export default function RegionPieChart() {
     activeIndexRef.current = undefined;
     setActiveIndex(undefined);
     setTooltipData(null);
+    setPieKey(prev => prev + 1);
   };
 
   const activateSlice = (index: number) => {
@@ -401,6 +403,7 @@ export default function RegionPieChart() {
               }>
                 <PieChart margin={{ top: 30, right: 50, bottom: 30, left: 50 }} accessibilityLayer={false}>
                   <Pie
+                    key={pieKey}
                     data={chartData}
                     cx="50%"
                     cy="50%"
