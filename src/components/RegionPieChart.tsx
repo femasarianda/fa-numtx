@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
 import { useState, useMemo, useEffect, useRef } from "react";
-import { format, subDays, subMonths, startOfMonth, startOfYear } from "date-fns";
+import { format, subDays, subMonths, startOfMonth } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -74,18 +74,6 @@ function adjustDate(date: Date, delta: number): Date {
   return subDays(date, -delta);
 }
 
-interface CustomSliceProps {
-  cx: number;
-  cy: number;
-  innerRadius: number;
-  outerRadius: number;
-  startAngle: number;
-  endAngle: number;
-  fill: string;
-  index: number;
-  activeIdx: number | undefined;
-}
-
 const renderActiveShape = (props: {
   cx: number;
   cy: number;
@@ -97,7 +85,16 @@ const renderActiveShape = (props: {
 }) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
   return (
-    <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} stroke="none" />
+    <Sector
+      cx={cx}
+      cy={cy}
+      innerRadius={innerRadius}
+      outerRadius={outerRadius + 8}
+      startAngle={startAngle}
+      endAngle={endAngle}
+      fill={fill}
+      stroke="none"
+    />
   );
 };
 
@@ -110,11 +107,6 @@ interface TooltipData {
 export default function RegionPieChart() {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
   const [pieKey, setPieKey] = useState(0);
-  interface TooltipData {
-    name: string;
-    value: number;
-    percentage: number;
-  }
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const activeIndexRef = useRef<number | undefined>(undefined);
   const [isMobile, setIsMobile] = useState(false);
@@ -130,6 +122,7 @@ export default function RegionPieChart() {
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const pieChartRef = useRef<HTMLDivElement>(null);
+  const chartDataRef = useRef<TooltipData[]>([]);
 
   // Deteksi mobile
   useEffect(() => {
@@ -156,17 +149,13 @@ export default function RegionPieChart() {
   // Reset ketika scroll atau klik/tap di luar chart dan legend
   useEffect(() => {
     const handleScroll = () => {
-      activeIndexRef.current = undefined;
-      setActiveIndex(undefined);
-      setTooltipData(null);
+      resetActiveSlice();
     };
 
     const handleOutside = (e: TouchEvent | MouseEvent) => {
       const container = chartContainerRef.current;
       if (container && !container.contains(e.target as Node)) {
-        activeIndexRef.current = undefined;
-        setActiveIndex(undefined);
-        setTooltipData(null);
+        resetActiveSlice();
       }
     };
 
@@ -228,7 +217,6 @@ export default function RegionPieChart() {
       .sort((a, b) => b.value - a.value);
   }, [data]);
 
-  const chartDataRef = useRef(chartData);
   useEffect(() => { chartDataRef.current = chartData; }, [chartData]);
 
   if (isLoading) {
@@ -251,6 +239,9 @@ export default function RegionPieChart() {
       </Card>
     );
   }
+
+  const outerRadius = typeof window !== "undefined" && window.innerWidth >= 768 ? 115 : 95;
+  const labelRadius = (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 90) + 25;
 
   return (
     <Card className="rounded-xl shadow-sm">
@@ -373,7 +364,6 @@ export default function RegionPieChart() {
           style={{ userSelect: "none", WebkitUserSelect: "none" }}
           onTouchStart={(e) => {
             if (!isMobile) return;
-            // Cari elemen SVG path yang disentuh
             const target = e.target as SVGElement;
             const svgEl = pieChartRef.current?.querySelector("svg");
             if (!svgEl) return;
@@ -398,23 +388,20 @@ export default function RegionPieChart() {
             <p className="text-sm text-muted-foreground text-center pt-6 pb-8">Belum ada data</p>
           ) : (
             <>
-              <ResponsiveContainer width="100%" height={
-                (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 95) * 2 + 70
-              }>
+              <ResponsiveContainer width="100%" height={outerRadius * 2 + 70}>
                 <PieChart margin={{ top: 30, right: 50, bottom: 30, left: 50 }} accessibilityLayer={false}>
                   <Pie
                     key={pieKey}
                     data={chartData}
                     cx="50%"
                     cy="50%"
-                    outerRadius={typeof window !== "undefined" && window.innerWidth >= 768 ? 115 : 95}
+                    outerRadius={outerRadius}
                     dataKey="value"
                     stroke="none"
                     label={({ percentage, cx, cy, midAngle, index }) => {
                       const RADIAN = Math.PI / 180;
-                      const radius = (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 90) + 25;
-                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                      const x = cx + labelRadius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + labelRadius * Math.sin(-midAngle * RADIAN);
                       return (
                         <text
                           x={x}
@@ -425,7 +412,7 @@ export default function RegionPieChart() {
                           style={{ fontSize: "clamp(12px, 3vw, 14px)", fontWeight: activeIndex === index ? 700 : 500, cursor: "pointer" }}
                           onMouseEnter={() => { if (!isMobile) activateSlice(index); }}
                           onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                          onTouchStart={(e) => { e.stopPropagation(); activateSlice(index); }}
+                          onTouchStart={(e) => { if (!isMobile) return; e.stopPropagation(); activateSlice(index); }}
                         >
                           {`${percentage.toFixed(1)}%`}
                         </text>
