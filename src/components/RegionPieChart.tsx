@@ -110,6 +110,11 @@ export default function RegionPieChart() {
     setTooltipData(null);
   };
 
+  const resetActiveSliceRef = useRef(resetActiveSlice);
+  useEffect(() => {
+    resetActiveSliceRef.current = resetActiveSlice;
+  });
+
   const activateSlice = (index: number) => {
     if (!chartData[index]) return;
     setActiveIndex(index);
@@ -120,12 +125,12 @@ export default function RegionPieChart() {
   useEffect(() => {
     if (activeIndex === undefined) return;
 
-    const handleScroll = () => resetActiveSlice();
+    const handleScroll = () => resetActiveSliceRef.current();
 
     const handleOutside = (e: TouchEvent | MouseEvent) => {
       const container = chartContainerRef.current;
       if (container && !container.contains(e.target as Node)) {
-        resetActiveSlice();
+        resetActiveSliceRef.current();
       }
     };
 
