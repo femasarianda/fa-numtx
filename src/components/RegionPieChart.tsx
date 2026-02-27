@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { format, subDays, subMonths, startOfMonth } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -106,7 +106,6 @@ interface TooltipData {
 
 export default function RegionPieChart() {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
-  const [pieKey, setPieKey] = useState(0);
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const activeIndexRef = useRef<number | undefined>(undefined);
   const [isMobile, setIsMobile] = useState(false);
@@ -124,7 +123,6 @@ export default function RegionPieChart() {
   const pieChartRef = useRef<HTMLDivElement>(null);
   const chartDataRef = useRef<TooltipData[]>([]);
 
-  // Deteksi mobile
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.matchMedia("(pointer: coarse)").matches);
     checkMobile();
@@ -132,24 +130,34 @@ export default function RegionPieChart() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const resetActiveSlice = () => {
+  // Reset hanya state visual, TANPA mengubah pieKey agar pie tidak reload
+  const resetActiveSlice = useCallback(() => {
     activeIndexRef.current = undefined;
     setActiveIndex(undefined);
     setTooltipData(null);
-    setPieKey(prev => prev + 1);
-  };
+  }, []);
 
-  const activateSlice = (index: number) => {
+  const activateSlice = useCallback((index: number) => {
     if (!chartDataRef.current[index]) return;
     activeIndexRef.current = index;
     setActiveIndex(index);
     setTooltipData(chartDataRef.current[index]);
-  };
+  }, []);
 
-  // Reset ketika scroll atau klik/tap di luar chart dan legend
+  const toggleSlice = useCallback((index: number) => {
+    if (activeIndexRef.current === index) {
+      resetActiveSlice();
+    } else {
+      activateSlice(index);
+    }
+  }, [activateSlice, resetActiveSlice]);
+
+  // Scroll: reset slice tanpa reload pie chart
   useEffect(() => {
     const handleScroll = () => {
-      resetActiveSlice();
+      if (activeIndexRef.current !== undefined) {
+        resetActiveSlice();
+      }
     };
 
     const handleOutside = (e: TouchEvent | MouseEvent) => {
@@ -168,7 +176,7 @@ export default function RegionPieChart() {
       window.removeEventListener("touchstart", handleOutside);
       window.removeEventListener("mousedown", handleOutside);
     };
-  }, []);
+  }, [resetActiveSlice]);
 
   const handleOpenSheet = () => {
     setTempPeriod(selectedPeriod);
@@ -217,7 +225,11 @@ export default function RegionPieChart() {
       .sort((a, b) => b.value - a.value);
   }, [data]);
 
-  useEffect(() => { chartDataRef.current = chartData; }, [chartData]);
+  useEffect(() => {
+    chartDataRef.current = chartData;
+    // Reset active slice saat data berubah
+    resetActiveSlice();
+  }, [chartData, resetActiveSlice]);
 
   if (isLoading) {
     return (
@@ -364,9 +376,20 @@ export default function RegionPieChart() {
           style={{ userSelect: "none", WebkitUserSelect: "none" }}
           onTouchStart={(e) => {
             if (!isMobile) return;
-            const target = e.target as SVGElement;
+
+            // Cek apakah touch di luar area SVG pie (misal klik di area kosong div)
             const svgEl = pieChartRef.current?.querySelector("svg");
             if (!svgEl) return;
+
+            const target = e.target as Element;
+
+            // Cek apakah target adalah bagian dari label persentase (text element)
+            if (target.tagName === "text" || target.closest("text")) {
+              // Handled oleh onTouchStart di element text itu sendiri
+              return;
+            }
+
+            // Cek apakah touch mengenai sector/path pie
             const paths = svgEl.querySelectorAll(".recharts-pie-sector path, .recharts-pie path");
             let touchedIndex: number | undefined = undefined;
             paths.forEach((path, i) => {
@@ -374,13 +397,10 @@ export default function RegionPieChart() {
                 touchedIndex = i;
               }
             });
+
             if (touchedIndex !== undefined) {
               e.stopPropagation();
-              if (activeIndexRef.current === touchedIndex) {
-                resetActiveSlice();
-              } else {
-                activateSlice(touchedIndex);
-              }
+              toggleSlice(touchedIndex);
             }
           }}
         >
@@ -391,7 +411,6 @@ export default function RegionPieChart() {
               <ResponsiveContainer width="100%" height={outerRadius * 2 + 70}>
                 <PieChart margin={{ top: 30, right: 50, bottom: 30, left: 50 }} accessibilityLayer={false}>
                   <Pie
-                    key={pieKey}
                     data={chartData}
                     cx="50%"
                     cy="50%"
@@ -409,10 +428,18 @@ export default function RegionPieChart() {
                           fill={activeIndex === index ? "hsl(var(--primary))" : "#000000"}
                           textAnchor="middle"
                           dominantBaseline="central"
-                          style={{ fontSize: "clamp(12px, 3vw, 14px)", fontWeight: activeIndex === index ? 700 : 500, cursor: "pointer" }}
+                          style={{
+                            fontSize: "clamp(12px, 3vw, 14px)",
+                            fontWeight: activeIndex === index ? 700 : 500,
+                            cursor: "pointer",
+                          }}
                           onMouseEnter={() => { if (!isMobile) activateSlice(index); }}
                           onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                          onTouchStart={(e) => { if (!isMobile) return; e.stopPropagation(); activateSlice(index); }}
+                          onTouchStart={(e) => {
+                            if (!isMobile) return;
+                            e.stopPropagation();
+                            toggleSlice(index);
+                          }}
                         >
                           {`${percentage.toFixed(1)}%`}
                         </text>
@@ -421,8 +448,9 @@ export default function RegionPieChart() {
                     labelLine={false}
                     activeIndex={activeIndex}
                     activeShape={renderActiveShape}
-                    onMouseEnter={(_, index) => { if (isMobile) return; activateSlice(index); }}
-                    onMouseLeave={() => { if (isMobile) return; resetActiveSlice(); }}
+                    onMouseEnter={(_, index) => { if (!isMobile) activateSlice(index); }}
+                    onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
+                    onClick={(_, index) => { if (isMobile) toggleSlice(index); }}
                     style={{ outline: "none", cursor: "pointer" }}
                     tabIndex={-1}
                     focusable={false}
@@ -457,14 +485,20 @@ export default function RegionPieChart() {
 
         {/* Div 4: Legend nama kota/kabupaten */}
         {chartData.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-6 pb-6 pt-4" style={{ userSelect: "none", WebkitUserSelect: "none" }}>
+          <div
+            className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-6 pb-6 pt-4"
+            style={{ userSelect: "none", WebkitUserSelect: "none" }}
+          >
             {chartData.map((entry, i) => (
               <div
                 key={entry.name}
                 className="flex items-center gap-1.5 cursor-pointer"
                 onMouseEnter={() => { if (!isMobile) activateSlice(i); }}
                 onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                onTouchStart={(e) => { e.stopPropagation(); activateSlice(i); }}
+                onTouchStart={(e) => {
+                  e.stopPropagation();
+                  toggleSlice(i);
+                }}
               >
                 <div
                   className="w-3 h-3 rounded-sm flex-shrink-0"
