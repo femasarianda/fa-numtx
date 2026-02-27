@@ -110,11 +110,6 @@ export default function RegionPieChart() {
     setTooltipData(null);
   };
 
-  const resetActiveSliceRef = useRef(resetActiveSlice);
-  useEffect(() => {
-    resetActiveSliceRef.current = resetActiveSlice;
-  });
-
   const activateSlice = (index: number) => {
     if (!chartData[index]) return;
     setActiveIndex(index);
@@ -123,14 +118,16 @@ export default function RegionPieChart() {
 
   // Reset ketika scroll atau klik/tap di luar chart dan legend
   useEffect(() => {
-    if (activeIndex === undefined) return;
-
-    const handleScroll = () => resetActiveSliceRef.current();
+    const handleScroll = () => {
+      setActiveIndex(undefined);
+      setTooltipData(null);
+    };
 
     const handleOutside = (e: TouchEvent | MouseEvent) => {
       const container = chartContainerRef.current;
       if (container && !container.contains(e.target as Node)) {
-        resetActiveSliceRef.current();
+        setActiveIndex(undefined);
+        setTooltipData(null);
       }
     };
 
@@ -143,7 +140,7 @@ export default function RegionPieChart() {
       window.removeEventListener("touchstart", handleOutside);
       window.removeEventListener("mousedown", handleOutside);
     };
-  }, [activeIndex]);
+  }, []);
 
   const handleOpenSheet = () => {
     setTempPeriod(selectedPeriod);
@@ -328,9 +325,9 @@ export default function RegionPieChart() {
       <div ref={chartContainerRef}>
 
         {/* Div 3: Pie chart */}
-        <div className="px-6 pt-3.5 pb-0 relative" style={{ userSelect: "none", WebkitUserSelect: "none" }}>
+        <div className="px-6 pt-1.5 pb-0 relative" style={{ userSelect: "none", WebkitUserSelect: "none" }}>
           {chartData.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
+            <p className="text-sm text-muted-foreground text-center pt-6 pb-8">Belum ada data</p>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={
