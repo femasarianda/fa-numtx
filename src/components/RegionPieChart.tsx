@@ -74,16 +74,47 @@ function adjustDate(date: Date, delta: number): Date {
   return subDays(date, -delta);
 }
 
-const renderActiveShape = (props: any) => {
+interface CustomSliceProps {
+  cx: number;
+  cy: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+  index: number;
+  activeIdx: number | undefined;
+}
+
+const renderActiveShape = (props: {
+  cx: number;
+  cy: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+}) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
   return (
     <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8} startAngle={startAngle} endAngle={endAngle} fill={fill} stroke="none" />
   );
 };
 
+interface TooltipData {
+  name: string;
+  value: number;
+  percentage: number;
+}
+
 export default function RegionPieChart() {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
-  const [tooltipData, setTooltipData] = useState<any>(null);
+  interface TooltipData {
+    name: string;
+    value: number;
+    percentage: number;
+  }
+  const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const activeIndexRef = useRef<number | undefined>(undefined);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("last_1_month");
@@ -365,6 +396,7 @@ export default function RegionPieChart() {
               }>
                 <PieChart margin={{ top: 30, right: 50, bottom: 30, left: 50 }} accessibilityLayer={false}>
                   <Pie
+                    key={activeIndex ?? -1}
                     data={chartData}
                     cx="50%"
                     cy="50%"
@@ -397,7 +429,6 @@ export default function RegionPieChart() {
                     activeShape={renderActiveShape}
                     onMouseEnter={(_, index) => { if (!isMobile) activateSlice(index); }}
                     onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                    onClick={() => {}}
                     style={{ outline: "none", cursor: "pointer" }}
                     tabIndex={-1}
                     focusable={false}
