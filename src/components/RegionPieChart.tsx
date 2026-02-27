@@ -365,7 +365,7 @@ export default function RegionPieChart() {
                     activeShape={renderActiveShape}
                     onMouseEnter={(_, index) => { if (!isMobile) activateSlice(index); }}
                     onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                    onTouchStart={(data, index) => { activateSlice(index); }}
+                    onClick={(_, index) => { if (isMobile) activateSlice(index); }}
                     style={{ outline: "none", cursor: "pointer" }}
                     tabIndex={-1}
                     focusable={false}
