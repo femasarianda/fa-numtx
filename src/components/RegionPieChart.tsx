@@ -16,17 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
 const COLORS = [
-  "#A5B4FC",
-  "#818CF8",
-  "#6366F1",
-  "#4F46E5",
-  "#4338CA",
-  "#5B21B6",
-  "#6D28D9",
-  "#7C3AED",
-  "#8B5CF6",
-  "#A78BFA",
-  "#C4B5FD",
+  "#A5B4FC", "#818CF8", "#6366F1", "#4F46E5", "#4338CA",
+  "#5B21B6", "#6D28D9", "#7C3AED", "#8B5CF6", "#A78BFA", "#C4B5FD",
 ];
 
 function getColorIndex(index: number, total: number): number {
@@ -75,26 +66,13 @@ function adjustDate(date: Date, delta: number): Date {
 }
 
 const renderActiveShape = (props: {
-  cx: number;
-  cy: number;
-  innerRadius: number;
-  outerRadius: number;
-  startAngle: number;
-  endAngle: number;
-  fill: string;
+  cx: number; cy: number; innerRadius: number; outerRadius: number;
+  startAngle: number; endAngle: number; fill: string;
 }) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
   return (
-    <Sector
-      cx={cx}
-      cy={cy}
-      innerRadius={innerRadius}
-      outerRadius={outerRadius + 8}
-      startAngle={startAngle}
-      endAngle={endAngle}
-      fill={fill}
-      stroke="none"
-    />
+    <Sector cx={cx} cy={cy} innerRadius={innerRadius} outerRadius={outerRadius + 8}
+            startAngle={startAngle} endAngle={endAngle} fill={fill} stroke="none" />
   );
 };
 
@@ -108,6 +86,16 @@ export default function RegionPieChart() {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const activeIndexRef = useRef<number | undefined>(undefined);
+
+  // Timestamp kapan terakhir kali toggle dipanggil.
+  // Scroll reset akan diabaikan jika terjadi dalam 300ms setelah toggle.
+  const lastToggleTimeRef = useRef<number>(0);
+
+  // Touch tracking untuk deteksi scroll vs tap
+  const touchStartYRef = useRef(0);
+  const touchStartXRef = useRef(0);
+  const didScrollRef = useRef(false);
+
   const [isMobile, setIsMobile] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("last_1_month");
   const [startDate, setStartDate] = useState(() => getDateRange("last_1_month").start);
@@ -120,7 +108,6 @@ export default function RegionPieChart() {
   const [tempEnd, setTempEnd] = useState(endDate);
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
-  const pieChartRef = useRef<HTMLDivElement>(null);
   const chartDataRef = useRef<TooltipData[]>([]);
 
   useEffect(() => {
@@ -130,12 +117,19 @@ export default function RegionPieChart() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Reset hanya state visual, TANPA mengubah pieKey agar pie tidak reload
   const resetActiveSlice = useCallback(() => {
+    if (activeIndexRef.current === undefined) return;
     activeIndexRef.current = undefined;
     setActiveIndex(undefined);
     setTooltipData(null);
   }, []);
+
+  // Reset yang sadar waktu: abaikan jika baru saja terjadi toggle (tap)
+  const resetFromScroll = useCallback(() => {
+    const now = Date.now();
+    if (now - lastToggleTimeRef.current < 300) return;
+    resetActiveSlice();
+  }, [resetActiveSlice]);
 
   const activateSlice = useCallback((index: number) => {
     if (!chartDataRef.current[index]) return;
@@ -145,6 +139,7 @@ export default function RegionPieChart() {
   }, []);
 
   const toggleSlice = useCallback((index: number) => {
+    lastToggleTimeRef.current = Date.now();
     if (activeIndexRef.current === index) {
       resetActiveSlice();
     } else {
@@ -152,30 +147,71 @@ export default function RegionPieChart() {
     }
   }, [activateSlice, resetActiveSlice]);
 
-  // Scroll: reset slice tanpa reload pie chart
+  // ─── Scroll reset ────────────────────────────────────────────────────────────
   useEffect(() => {
-    const handleScroll = () => {
-      if (activeIndexRef.current !== undefined) {
-        resetActiveSlice();
+    const onScroll = () => resetFromScroll();
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("scroll", onScroll, { passive: true });
+    window.visualViewport?.addEventListener("scroll", onScroll);
+
+    const matched: HTMLElement[] = [];
+    document.querySelectorAll<HTMLElement>("*").forEach((el) => {
+      const s = window.getComputedStyle(el);
+      if (/(auto|scroll)/.test(s.overflowY + s.overflowX) && el !== document.body) {
+        el.addEventListener("scroll", onScroll, { passive: true });
+        matched.push(el);
+      }
+    });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("scroll", onScroll);
+      window.visualViewport?.removeEventListener("scroll", onScroll);
+      matched.forEach((el) => el.removeEventListener("scroll", onScroll));
+    };
+  }, [resetFromScroll]);
+
+  // ─── Global touch tracking ───────────────────────────────────────────────────
+  useEffect(() => {
+    const onTouchStart = (e: TouchEvent) => {
+      touchStartYRef.current = e.touches[0].clientY;
+      touchStartXRef.current = e.touches[0].clientX;
+      didScrollRef.current = false;
+
+      const container = chartContainerRef.current;
+      if (container && !container.contains(e.target as Node)) {
+        resetFromScroll();
       }
     };
 
-    const handleOutside = (e: TouchEvent | MouseEvent) => {
+    const onTouchMove = (e: TouchEvent) => {
+      const dy = Math.abs(e.touches[0].clientY - touchStartYRef.current);
+      const dx = Math.abs(e.touches[0].clientX - touchStartXRef.current);
+      if (dy > 8 || dx > 8) {
+        didScrollRef.current = true;
+        resetFromScroll();
+      }
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [resetFromScroll]);
+
+  // Desktop: klik di luar chart
+  useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
       const container = chartContainerRef.current;
       if (container && !container.contains(e.target as Node)) {
         resetActiveSlice();
       }
     };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    window.addEventListener("touchstart", handleOutside, { passive: true });
-    window.addEventListener("mousedown", handleOutside);
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("touchstart", handleOutside);
-      window.removeEventListener("mousedown", handleOutside);
-    };
+    window.addEventListener("mousedown", onMouseDown);
+    return () => window.removeEventListener("mousedown", onMouseDown);
   }, [resetActiveSlice]);
 
   const handleOpenSheet = () => {
@@ -227,7 +263,6 @@ export default function RegionPieChart() {
 
   useEffect(() => {
     chartDataRef.current = chartData;
-    // Reset active slice saat data berubah
     resetActiveSlice();
   }, [chartData, resetActiveSlice]);
 
@@ -258,12 +293,10 @@ export default function RegionPieChart() {
   return (
     <Card className="rounded-xl shadow-sm">
 
-      {/* Div 1: Judul */}
       <CardHeader className="pb-0">
         <CardTitle className="text-base">Informasi Kendaraan</CardTitle>
       </CardHeader>
 
-      {/* Div 2: Tombol tanggal */}
       <div className="flex justify-center px-6 pt-4 pb-0">
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
@@ -286,9 +319,7 @@ export default function RegionPieChart() {
             <RadioGroup value={tempPeriod} onValueChange={handlePeriodChange} className="space-y-0">
               {PERIOD_OPTIONS.map((opt) => (
                 <div key={opt.value} className="flex items-center justify-between py-1.5 px-1">
-                  <Label htmlFor={opt.value} className="text-sm font-normal cursor-pointer flex-1">
-                    {opt.label}
-                  </Label>
+                  <Label htmlFor={opt.value} className="text-sm font-normal cursor-pointer flex-1">{opt.label}</Label>
                   <RadioGroupItem value={opt.value} id={opt.value} />
                 </div>
               ))}
@@ -310,16 +341,10 @@ export default function RegionPieChart() {
                       </button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="center">
-                      <Calendar
-                        mode="single"
-                        selected={tempStart}
-                        onSelect={(date) => { if (date) { setTempStart(date); setStartPopoverOpen(false); } }}
-                        captionLayout="dropdown-buttons"
-                        fromYear={2025}
-                        toYear={new Date().getFullYear()}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
+                      <Calendar mode="single" selected={tempStart}
+                                onSelect={(date) => { if (date) { setTempStart(date); setStartPopoverOpen(false); } }}
+                                captionLayout="dropdown-buttons" fromYear={2025} toYear={new Date().getFullYear()}
+                                initialFocus className={cn("p-3 pointer-events-auto")} />
                     </PopoverContent>
                   </Popover>
                   <button onClick={() => setTempStart(adjustDate(tempStart, 1))} className="p-1 text-muted-foreground hover:text-foreground">
@@ -340,16 +365,10 @@ export default function RegionPieChart() {
                       </button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="center">
-                      <Calendar
-                        mode="single"
-                        selected={tempEnd}
-                        onSelect={(date) => { if (date) { setTempEnd(date); setEndPopoverOpen(false); } }}
-                        captionLayout="dropdown-buttons"
-                        fromYear={2025}
-                        toYear={new Date().getFullYear()}
-                        initialFocus
-                        className={cn("p-3 pointer-events-auto")}
-                      />
+                      <Calendar mode="single" selected={tempEnd}
+                                onSelect={(date) => { if (date) { setTempEnd(date); setEndPopoverOpen(false); } }}
+                                captionLayout="dropdown-buttons" fromYear={2025} toYear={new Date().getFullYear()}
+                                initialFocus className={cn("p-3 pointer-events-auto")} />
                     </PopoverContent>
                   </Popover>
                   <button onClick={() => setTempEnd(adjustDate(tempEnd, 1))} className="p-1 text-muted-foreground hover:text-foreground">
@@ -359,50 +378,17 @@ export default function RegionPieChart() {
               </div>
             </div>
 
-            <Button onClick={handleApply} className="w-full">
-              Apply
-            </Button>
+            <Button onClick={handleApply} className="w-full">Apply</Button>
           </SheetContent>
         </Sheet>
       </div>
 
-      {/* Div 3 + 4 wrapper dengan ref */}
       <div ref={chartContainerRef}>
 
-        {/* Div 3: Pie chart */}
+        {/* Pie chart */}
         <div
-          ref={pieChartRef}
           className="px-6 pt-1.5 pb-0 relative"
           style={{ userSelect: "none", WebkitUserSelect: "none" }}
-          onTouchStart={(e) => {
-            if (!isMobile) return;
-
-            // Cek apakah touch di luar area SVG pie (misal klik di area kosong div)
-            const svgEl = pieChartRef.current?.querySelector("svg");
-            if (!svgEl) return;
-
-            const target = e.target as Element;
-
-            // Cek apakah target adalah bagian dari label persentase (text element)
-            if (target.tagName === "text" || target.closest("text")) {
-              // Handled oleh onTouchStart di element text itu sendiri
-              return;
-            }
-
-            // Cek apakah touch mengenai sector/path pie
-            const paths = svgEl.querySelectorAll(".recharts-pie-sector path, .recharts-pie path");
-            let touchedIndex: number | undefined = undefined;
-            paths.forEach((path, i) => {
-              if (path === target || path.contains(target)) {
-                touchedIndex = i;
-              }
-            });
-
-            if (touchedIndex !== undefined) {
-              e.stopPropagation();
-              toggleSlice(touchedIndex);
-            }
-          }}
         >
           {chartData.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center pt-6 pb-8">Belum ada data</p>
@@ -423,8 +409,7 @@ export default function RegionPieChart() {
                       const y = cy + labelRadius * Math.sin(-midAngle * RADIAN);
                       return (
                         <text
-                          x={x}
-                          y={y}
+                          x={x} y={y}
                           fill={activeIndex === index ? "hsl(var(--primary))" : "#000000"}
                           textAnchor="middle"
                           dominantBaseline="central"
@@ -435,9 +420,9 @@ export default function RegionPieChart() {
                           }}
                           onMouseEnter={() => { if (!isMobile) activateSlice(index); }}
                           onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                          onTouchStart={(e) => {
+                          onTouchEnd={() => {
                             if (!isMobile) return;
-                            e.stopPropagation();
+                            if (didScrollRef.current) return;
                             toggleSlice(index);
                           }}
                         >
@@ -450,19 +435,20 @@ export default function RegionPieChart() {
                     activeShape={renderActiveShape}
                     onMouseEnter={(_, index) => { if (!isMobile) activateSlice(index); }}
                     onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                    onClick={(_, index) => { if (isMobile) toggleSlice(index); }}
                     style={{ outline: "none", cursor: "pointer" }}
                     tabIndex={-1}
                     focusable={false}
+                    onClick={(_, index) => {
+                      // Dipakai desktop & mobile
+                      // Mobile: onClick Recharts firing ~300ms setelah tap (setelah touchend)
+                      // didScrollRef mencegah ini diproses jika user sedang scroll
+                      if (didScrollRef.current) return;
+                      toggleSlice(index);
+                    }}
                   >
                     {chartData.map((_, i) => (
-                      <Cell
-                        key={i}
-                        fill={COLORS[getColorIndex(i, chartData.length)]}
-                        stroke="none"
-                        style={{ outline: "none" }}
-                        tabIndex={-1}
-                      />
+                      <Cell key={i} fill={COLORS[getColorIndex(i, chartData.length)]}
+                            stroke="none" style={{ outline: "none" }} tabIndex={-1} />
                     ))}
                   </Pie>
                   <Tooltip cursor={false} content={() => null} />
@@ -483,7 +469,7 @@ export default function RegionPieChart() {
           )}
         </div>
 
-        {/* Div 4: Legend nama kota/kabupaten */}
+        {/* Legend */}
         {chartData.length > 0 && (
           <div
             className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-6 pb-6 pt-4"
@@ -495,8 +481,9 @@ export default function RegionPieChart() {
                 className="flex items-center gap-1.5 cursor-pointer"
                 onMouseEnter={() => { if (!isMobile) activateSlice(i); }}
                 onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                onTouchStart={(e) => {
-                  e.stopPropagation();
+                onTouchEnd={() => {
+                  if (!isMobile) return;
+                  if (didScrollRef.current) return;
                   toggleSlice(i);
                 }}
               >
