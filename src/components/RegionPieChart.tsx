@@ -319,111 +319,114 @@ export default function RegionPieChart() {
         </Sheet>
       </div>
 
-      {/* Div 3: Pie chart */}
-      <div ref={chartContainerRef} className="px-6 pt-3.5 pb-0 relative">
-        {chartData.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
-        ) : (
-          <>
-            <ResponsiveContainer width="100%" height={
-              (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 95) * 2 + 70
-            }>
-              <PieChart margin={{ top: 30, right: 50, bottom: 30, left: 50 }} accessibilityLayer={false}>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={typeof window !== "undefined" && window.innerWidth >= 768 ? 115 : 95}
-                  dataKey="value"
-                  stroke="none"
-                  label={({ percentage, cx, cy, midAngle, index }) => {
-                    const RADIAN = Math.PI / 180;
-                    const radius = (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 90) + 25;
-                    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                    return (
-                      <text
-                        x={x}
-                        y={y}
-                        fill={activeIndex === index ? "hsl(var(--primary))" : "#000000"}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        style={{ fontSize: "clamp(12px, 3vw, 14px)", fontWeight: activeIndex === index ? 700 : 500, cursor: "pointer" }}
-                        onMouseEnter={() => { if (!isMobile) activateSlice(index); }}
-                        onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                        onTouchStart={(e) => { e.stopPropagation(); activateSlice(index); }}
-                      >
-                        {`${percentage.toFixed(1)}%`}
-                      </text>
-                    );
-                  }}
-                  labelLine={false}
-                  activeIndex={activeIndex}
-                  activeShape={renderActiveShape}
-                  onMouseEnter={(_, index) => { if (!isMobile) activateSlice(index); }}
-                  onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                  onTouchStart={(data, index) => { activateSlice(index); }}
-                  style={{ outline: "none", cursor: "pointer" }}
-                  tabIndex={-1}
-                  focusable={false}
-                >
-                  {chartData.map((_, i) => (
-                    <Cell
-                      key={i}
-                      fill={COLORS[getColorIndex(i, chartData.length)]}
-                      stroke="none"
-                      style={{ outline: "none" }}
-                      tabIndex={-1}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip cursor={false} content={() => null} />
-              </PieChart>
-            </ResponsiveContainer>
+      {/* Div 3 + 4 wrapper dengan ref */}
+      <div ref={chartContainerRef}>
 
-            {activeIndex !== undefined && tooltipData && (
+        {/* Div 3: Pie chart */}
+        <div className="px-6 pt-3.5 pb-0 relative">
+          {chartData.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height={
+                (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 95) * 2 + 70
+              }>
+                <PieChart margin={{ top: 30, right: 50, bottom: 30, left: 50 }} accessibilityLayer={false}>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={typeof window !== "undefined" && window.innerWidth >= 768 ? 115 : 95}
+                    dataKey="value"
+                    stroke="none"
+                    label={({ percentage, cx, cy, midAngle, index }) => {
+                      const RADIAN = Math.PI / 180;
+                      const radius = (typeof window !== "undefined" && window.innerWidth >= 768 ? 110 : 90) + 25;
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+                      return (
+                        <text
+                          x={x}
+                          y={y}
+                          fill={activeIndex === index ? "hsl(var(--primary))" : "#000000"}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          style={{ fontSize: "clamp(12px, 3vw, 14px)", fontWeight: activeIndex === index ? 700 : 500, cursor: "pointer" }}
+                          onMouseEnter={() => { if (!isMobile) activateSlice(index); }}
+                          onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
+                          onTouchStart={(e) => { e.stopPropagation(); activateSlice(index); }}
+                        >
+                          {`${percentage.toFixed(1)}%`}
+                        </text>
+                      );
+                    }}
+                    labelLine={false}
+                    activeIndex={activeIndex}
+                    activeShape={renderActiveShape}
+                    onMouseEnter={(_, index) => { if (!isMobile) activateSlice(index); }}
+                    onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
+                    onTouchStart={(data, index) => { activateSlice(index); }}
+                    style={{ outline: "none", cursor: "pointer" }}
+                    tabIndex={-1}
+                    focusable={false}
+                  >
+                    {chartData.map((_, i) => (
+                      <Cell
+                        key={i}
+                        fill={COLORS[getColorIndex(i, chartData.length)]}
+                        stroke="none"
+                        style={{ outline: "none" }}
+                        tabIndex={-1}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip cursor={false} content={() => null} />
+                </PieChart>
+              </ResponsiveContainer>
+
+              {activeIndex !== undefined && tooltipData && (
+                <div
+                  className="absolute left-1/2 z-50 bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm pointer-events-none -translate-x-1/2"
+                  style={{ top: "calc(50% - 15px)" }}
+                >
+                  <span className="font-medium">{tooltipData.name}</span>{" "}
+                  <span className="text-primary font-semibold">{tooltipData.value}</span>{" "}
+                  <span className="text-foreground">({tooltipData.percentage.toFixed(1)}%)</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Div 4: Legend nama kota/kabupaten */}
+        {chartData.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-6 pb-6 pt-4">
+            {chartData.map((entry, i) => (
               <div
-                className="absolute left-1/2 z-50 bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm pointer-events-none -translate-x-1/2"
-                style={{ top: "calc(50% - 15px)" }}
+                key={entry.name}
+                className="flex items-center gap-1.5 cursor-pointer"
+                onMouseEnter={() => { if (!isMobile) activateSlice(i); }}
+                onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
+                onTouchStart={(e) => { e.stopPropagation(); activateSlice(i); }}
               >
-                <span className="font-medium">{tooltipData.name}</span>{" "}
-                <span className="text-primary font-semibold">{tooltipData.value}</span>{" "}
-                <span className="text-foreground">({tooltipData.percentage.toFixed(1)}%)</span>
+                <div
+                  className="w-3 h-3 rounded-sm flex-shrink-0"
+                  style={{ backgroundColor: COLORS[getColorIndex(i, chartData.length)] }}
+                />
+                <span
+                  style={{
+                    fontSize: "clamp(12px, 3vw, 14px)",
+                    fontWeight: activeIndex === i ? 700 : 400,
+                    color: activeIndex === i ? "hsl(var(--primary))" : "#111827",
+                  }}
+                >
+                  {entry.name}
+                </span>
               </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
       </div>
-
-      {/* Div 4: Legend nama kota/kabupaten */}
-      {chartData.length > 0 && (
-        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-6 pb-6 pt-4">
-          {chartData.map((entry, i) => (
-            <div
-              key={entry.name}
-              className="flex items-center gap-1.5 cursor-pointer"
-              onMouseEnter={() => { if (!isMobile) activateSlice(i); }}
-              onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-              onTouchStart={(e) => { e.stopPropagation(); activateSlice(i); }}
-            >
-              <div
-                className="w-3 h-3 rounded-sm flex-shrink-0"
-                style={{ backgroundColor: COLORS[getColorIndex(i, chartData.length)] }}
-              />
-              <span
-                style={{
-                  fontSize: "clamp(12px, 3vw, 14px)",
-                  fontWeight: activeIndex === i ? 700 : 400,
-                  color: activeIndex === i ? "hsl(var(--primary))" : "#111827",
-                }}
-              >
-                {entry.name}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
     </Card>
   );
 }
