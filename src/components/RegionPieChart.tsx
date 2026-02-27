@@ -84,6 +84,7 @@ const renderActiveShape = (props: any) => {
 export default function RegionPieChart() {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
   const [tooltipData, setTooltipData] = useState<any>(null);
+  const activeIndexRef = useRef<number | undefined>(undefined);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState("last_1_month");
   const [startDate, setStartDate] = useState(() => getDateRange("last_1_month").start);
@@ -106,12 +107,14 @@ export default function RegionPieChart() {
   }, []);
 
   const resetActiveSlice = () => {
+    activeIndexRef.current = undefined;
     setActiveIndex(undefined);
     setTooltipData(null);
   };
 
   const activateSlice = (index: number) => {
     if (!chartData[index]) return;
+    activeIndexRef.current = index;
     setActiveIndex(index);
     setTooltipData(chartData[index]);
   };
@@ -367,7 +370,15 @@ export default function RegionPieChart() {
                     activeShape={renderActiveShape}
                     onMouseEnter={(_, index) => { if (!isMobile) activateSlice(index); }}
                     onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                    onClick={(_, index) => { if (isMobile) activateSlice(index); }}
+                    onClick={(_, index) => {
+                      if (isMobile) {
+                        if (activeIndexRef.current === index) {
+                          resetActiveSlice();
+                        } else {
+                          activateSlice(index);
+                        }
+                      }
+                    }}
                     style={{ outline: "none", cursor: "pointer" }}
                     tabIndex={-1}
                     focusable={false}
