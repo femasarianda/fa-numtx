@@ -323,7 +323,7 @@ export default function RegionPieChart() {
       <div ref={chartContainerRef}>
 
         {/* Div 3: Pie chart */}
-        <div className="px-6 pt-3.5 pb-0 relative">
+        <div className="px-6 pt-3.5 pb-0 relative" style={{ userSelect: "none", WebkitUserSelect: "none" }}>
           {chartData.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Belum ada data</p>
           ) : (
@@ -400,7 +400,7 @@ export default function RegionPieChart() {
 
         {/* Div 4: Legend nama kota/kabupaten */}
         {chartData.length > 0 && (
-          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-6 pb-6 pt-4">
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-6 pb-6 pt-4" style={{ userSelect: "none", WebkitUserSelect: "none" }}>
             {chartData.map((entry, i) => (
               <div
                 key={entry.name}
