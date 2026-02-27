@@ -97,6 +97,7 @@ export default function RegionPieChart() {
   const [tempEnd, setTempEnd] = useState(endDate);
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
+  const pieChartRef = useRef<HTMLDivElement>(null);
 
   // Deteksi mobile
   useEffect(() => {
@@ -328,7 +329,33 @@ export default function RegionPieChart() {
       <div ref={chartContainerRef}>
 
         {/* Div 3: Pie chart */}
-        <div className="px-6 pt-1.5 pb-0 relative" style={{ userSelect: "none", WebkitUserSelect: "none" }}>
+        <div
+          ref={pieChartRef}
+          className="px-6 pt-1.5 pb-0 relative"
+          style={{ userSelect: "none", WebkitUserSelect: "none" }}
+          onTouchStart={(e) => {
+            if (!isMobile) return;
+            // Cari elemen SVG path yang disentuh
+            const target = e.target as SVGElement;
+            const svgEl = pieChartRef.current?.querySelector("svg");
+            if (!svgEl) return;
+            const paths = svgEl.querySelectorAll(".recharts-pie-sector path, .recharts-pie path");
+            let touchedIndex: number | undefined = undefined;
+            paths.forEach((path, i) => {
+              if (path === target || path.contains(target)) {
+                touchedIndex = i;
+              }
+            });
+            if (touchedIndex !== undefined) {
+              e.stopPropagation();
+              if (activeIndexRef.current === touchedIndex) {
+                resetActiveSlice();
+              } else {
+                activateSlice(touchedIndex);
+              }
+            }
+          }}
+        >
           {chartData.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center pt-6 pb-8">Belum ada data</p>
           ) : (
@@ -370,15 +397,7 @@ export default function RegionPieChart() {
                     activeShape={renderActiveShape}
                     onMouseEnter={(_, index) => { if (!isMobile) activateSlice(index); }}
                     onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                    onClick={(_, index) => {
-                      if (isMobile) {
-                        if (activeIndexRef.current === index) {
-                          resetActiveSlice();
-                        } else {
-                          activateSlice(index);
-                        }
-                      }
-                    }}
+                    onClick={() => {}}
                     style={{ outline: "none", cursor: "pointer" }}
                     tabIndex={-1}
                     focusable={false}
