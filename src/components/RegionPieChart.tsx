@@ -145,10 +145,10 @@ export default function RegionPieChart() {
   };
 
   const activateSlice = (index: number) => {
-    if (!chartData[index]) return;
+    if (!chartDataRef.current[index]) return;
     activeIndexRef.current = index;
     setActiveIndex(index);
-    setTooltipData(chartData[index]);
+    setTooltipData(chartDataRef.current[index]);
   };
 
   // Reset ketika scroll atau klik/tap di luar chart dan legend
@@ -225,6 +225,9 @@ export default function RegionPieChart() {
       .map(([name, value]) => ({ name, value, percentage: (value / total) * 100 }))
       .sort((a, b) => b.value - a.value);
   }, [data]);
+
+  const chartDataRef = useRef(chartData);
+  useEffect(() => { chartDataRef.current = chartData; }, [chartData]);
 
   if (isLoading) {
     return (
@@ -428,8 +431,8 @@ export default function RegionPieChart() {
                     labelLine={false}
                     activeIndex={activeIndex}
                     activeShape={renderActiveShape}
-                    onMouseEnter={(_, index) => { if (!isMobile) activateSlice(index); }}
-                    onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
+                    onMouseEnter={(_, index) => { if (isMobile) return; activateSlice(index); }}
+                    onMouseLeave={() => { if (isMobile) return; resetActiveSlice(); }}
                     style={{ outline: "none", cursor: "pointer" }}
                     tabIndex={-1}
                     focusable={false}
