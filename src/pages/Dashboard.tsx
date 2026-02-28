@@ -8,16 +8,27 @@ const RegionPieChart = lazy(() => import("@/components/RegionPieChart"));
 
 const CardSkeleton = () => (
   <Card className="rounded-xl shadow-sm">
-    <CardHeader><CardTitle className="text-base"><Skeleton className="h-5 w-40" /></CardTitle></CardHeader>
-    <CardContent><Skeleton className="w-full h-[300px] rounded-lg" /></CardContent>
+    <CardHeader className="px-3 py-3 md:px-6 md:py-4">
+      <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>
+        <Skeleton className="h-4 w-32 md:h-5 md:w-40" />
+      </CardTitle>
+    </CardHeader>
+    <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
+      <Skeleton className="w-full h-[200px] md:h-[300px] rounded-lg" />
+    </CardContent>
   </Card>
 );
 
 export default function Dashboard() {
   return (
     <Layout>
-      <h1 className="text-2xl font-bold text-foreground mb-6">Dashboard</h1>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <h1
+        className="font-bold text-foreground mb-4 md:mb-6"
+        style={{ fontSize: "clamp(18px, 5vw, 24px)" }}
+      >
+        Dashboard
+      </h1>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 items-start">
         <Suspense fallback={<CardSkeleton />}>
           <VideoPlayer />
         </Suspense>

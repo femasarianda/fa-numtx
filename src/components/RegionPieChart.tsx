@@ -87,11 +87,7 @@ export default function RegionPieChart() {
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null);
   const activeIndexRef = useRef<number | undefined>(undefined);
 
-  // Timestamp kapan terakhir kali toggle dipanggil.
-  // Scroll reset akan diabaikan jika terjadi dalam 300ms setelah toggle.
   const lastToggleTimeRef = useRef<number>(0);
-
-  // Touch tracking untuk deteksi scroll vs tap
   const touchStartYRef = useRef(0);
   const touchStartXRef = useRef(0);
   const didScrollRef = useRef(false);
@@ -124,7 +120,6 @@ export default function RegionPieChart() {
     setTooltipData(null);
   }, []);
 
-  // Reset yang sadar waktu: abaikan jika baru saja terjadi toggle (tap)
   const resetFromScroll = useCallback(() => {
     const now = Date.now();
     if (now - lastToggleTimeRef.current < 300) return;
@@ -147,14 +142,11 @@ export default function RegionPieChart() {
     }
   }, [activateSlice, resetActiveSlice]);
 
-  // ─── Scroll reset ────────────────────────────────────────────────────────────
   useEffect(() => {
     const onScroll = () => resetFromScroll();
-
     window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("scroll", onScroll, { passive: true });
     window.visualViewport?.addEventListener("scroll", onScroll);
-
     const matched: HTMLElement[] = [];
     document.querySelectorAll<HTMLElement>("*").forEach((el) => {
       const s = window.getComputedStyle(el);
@@ -163,7 +155,6 @@ export default function RegionPieChart() {
         matched.push(el);
       }
     });
-
     return () => {
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("scroll", onScroll);
@@ -172,19 +163,16 @@ export default function RegionPieChart() {
     };
   }, [resetFromScroll]);
 
-  // ─── Global touch tracking ───────────────────────────────────────────────────
   useEffect(() => {
     const onTouchStart = (e: TouchEvent) => {
       touchStartYRef.current = e.touches[0].clientY;
       touchStartXRef.current = e.touches[0].clientX;
       didScrollRef.current = false;
-
       const container = chartContainerRef.current;
       if (container && !container.contains(e.target as Node)) {
         resetFromScroll();
       }
     };
-
     const onTouchMove = (e: TouchEvent) => {
       const dy = Math.abs(e.touches[0].clientY - touchStartYRef.current);
       const dx = Math.abs(e.touches[0].clientX - touchStartXRef.current);
@@ -193,7 +181,6 @@ export default function RegionPieChart() {
         resetFromScroll();
       }
     };
-
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: true });
     return () => {
@@ -202,7 +189,6 @@ export default function RegionPieChart() {
     };
   }, [resetFromScroll]);
 
-  // Desktop: klik di luar chart
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
       const container = chartContainerRef.current;
@@ -266,11 +252,21 @@ export default function RegionPieChart() {
     resetActiveSlice();
   }, [chartData, resetActiveSlice]);
 
+  // Shared responsive font styles (same pattern as HistoricalReport)
+  const fontResponsive = { fontSize: "clamp(11px, 3vw, 14px)" };
+  const fontHeader = { fontSize: "clamp(11px, 2.8vw, 13px)" };
+
   if (isLoading) {
     return (
       <Card className="rounded-xl shadow-sm">
-        <CardHeader><CardTitle className="text-base">Informasi Kendaraan</CardTitle></CardHeader>
-        <CardContent><Skeleton className="w-full h-[300px] rounded-lg" /></CardContent>
+        <CardHeader className="px-3 py-3 md:px-6 md:py-4">
+          <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>
+            Informasi Kendaraan
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
+          <Skeleton className="w-full h-[260px] md:h-[300px] rounded-lg" />
+        </CardContent>
       </Card>
     );
   }
@@ -278,10 +274,16 @@ export default function RegionPieChart() {
   if (error) {
     return (
       <Card className="rounded-xl shadow-sm">
-        <CardHeader><CardTitle className="text-base">Informasi Kendaraan</CardTitle></CardHeader>
-        <CardContent className="flex flex-col items-center gap-3 py-8">
-          <p className="text-sm text-muted-foreground">Gagal memuat data</p>
-          <button onClick={() => refetch()} className="text-sm text-primary hover:underline">Coba lagi</button>
+        <CardHeader className="px-3 py-3 md:px-6 md:py-4">
+          <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>
+            Informasi Kendaraan
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-3 pb-3 md:px-6 md:pb-6 flex flex-col items-center gap-3 py-6 md:py-8">
+          <p className="text-muted-foreground" style={fontResponsive}>Gagal memuat data</p>
+          <button onClick={() => refetch()} className="text-primary hover:underline" style={fontResponsive}>
+            Coba lagi
+          </button>
         </CardContent>
       </Card>
     );
@@ -293,33 +295,39 @@ export default function RegionPieChart() {
   return (
     <Card className="rounded-xl shadow-sm">
 
-      <CardHeader className="pb-0">
-        <CardTitle className="text-base">Informasi Kendaraan</CardTitle>
+      {/* Card Header */}
+      <CardHeader className="px-3 py-3 md:px-6 md:py-4 pb-0">
+        <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>
+          Informasi Kendaraan
+        </CardTitle>
       </CardHeader>
 
-      <div className="flex justify-center px-6 pt-4 pb-0">
+      {/* Date range picker trigger */}
+      <div className="flex justify-center px-3 pt-3 pb-0 md:px-6 md:pt-4">
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
           <SheetTrigger asChild>
             <button
               onClick={handleOpenSheet}
-              className="flex items-center gap-2 cursor-pointer hover:opacity-60 transition-opacity bg-muted/90 rounded-full px-4 py-1.5"
+              className="flex items-center gap-2 cursor-pointer hover:opacity-60 transition-opacity bg-muted/90 rounded-full px-3 py-1 md:px-4 md:py-1.5"
             >
-              <span className="text-sm text-primary font-medium">
+              <span className="text-primary font-medium" style={fontHeader}>
                 {format(startDate, "dd MMM yy")} - {format(endDate, "dd MMM yy")}
               </span>
-              <CalendarIcon className="h-4 w-4 text-primary" />
+              <CalendarIcon className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
             </button>
           </SheetTrigger>
 
           <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto mx-auto lg:max-w-[33vw] lg:rounded-2xl pt-4 lg:bottom-auto lg:top-1/2 lg:-translate-y-1/2">
             <SheetHeader className="pb-2">
-              <SheetTitle className="text-center">Periode</SheetTitle>
+              <SheetTitle className="text-center" style={fontResponsive}>Periode</SheetTitle>
             </SheetHeader>
 
             <RadioGroup value={tempPeriod} onValueChange={handlePeriodChange} className="space-y-0">
               {PERIOD_OPTIONS.map((opt) => (
                 <div key={opt.value} className="flex items-center justify-between py-1.5 px-1">
-                  <Label htmlFor={opt.value} className="text-sm font-normal cursor-pointer flex-1">{opt.label}</Label>
+                  <Label htmlFor={opt.value} className="font-normal cursor-pointer flex-1" style={fontResponsive}>
+                    {opt.label}
+                  </Label>
                   <RadioGroupItem value={opt.value} id={opt.value} />
                 </div>
               ))}
@@ -327,16 +335,16 @@ export default function RegionPieChart() {
 
             <Separator className="my-2" />
 
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-3 md:gap-4 mb-5 md:mb-6">
               <div>
-                <p className="text-sm font-semibold text-primary mb-2 text-center">Start</p>
+                <p className="font-semibold text-primary mb-2 text-center" style={fontHeader}>Start</p>
                 <div className="flex items-center justify-between gap-1">
                   <button onClick={() => setTempStart(adjustDate(tempStart, -1))} className="p-1 text-muted-foreground hover:text-foreground">
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   </button>
                   <Popover open={startPopoverOpen} onOpenChange={setStartPopoverOpen}>
                     <PopoverTrigger asChild>
-                      <button className="text-sm hover:text-primary hover:underline transition-colors cursor-pointer">
+                      <button className="hover:text-primary hover:underline transition-colors cursor-pointer" style={fontHeader}>
                         {format(tempStart, "dd MMM yy")}
                       </button>
                     </PopoverTrigger>
@@ -348,19 +356,19 @@ export default function RegionPieChart() {
                     </PopoverContent>
                   </Popover>
                   <button onClick={() => setTempStart(adjustDate(tempStart, 1))} className="p-1 text-muted-foreground hover:text-foreground">
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   </button>
                 </div>
               </div>
               <div>
-                <p className="text-sm font-semibold text-primary mb-2 text-center">End</p>
+                <p className="font-semibold text-primary mb-2 text-center" style={fontHeader}>End</p>
                 <div className="flex items-center justify-between gap-1">
                   <button onClick={() => setTempEnd(adjustDate(tempEnd, -1))} className="p-1 text-muted-foreground hover:text-foreground">
-                    <ChevronLeft className="h-4 w-4" />
+                    <ChevronLeft className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   </button>
                   <Popover open={endPopoverOpen} onOpenChange={setEndPopoverOpen}>
                     <PopoverTrigger asChild>
-                      <button className="text-sm hover:text-primary hover:underline transition-colors cursor-pointer">
+                      <button className="hover:text-primary hover:underline transition-colors cursor-pointer" style={fontHeader}>
                         {format(tempEnd, "dd MMM yy")}
                       </button>
                     </PopoverTrigger>
@@ -372,13 +380,13 @@ export default function RegionPieChart() {
                     </PopoverContent>
                   </Popover>
                   <button onClick={() => setTempEnd(adjustDate(tempEnd, 1))} className="p-1 text-muted-foreground hover:text-foreground">
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
                   </button>
                 </div>
               </div>
             </div>
 
-            <Button onClick={handleApply} className="w-full">Apply</Button>
+            <Button onClick={handleApply} className="w-full" style={fontResponsive}>Apply</Button>
           </SheetContent>
         </Sheet>
       </div>
@@ -387,11 +395,13 @@ export default function RegionPieChart() {
 
         {/* Pie chart */}
         <div
-          className="px-6 pt-1.5 pb-0 relative"
+          className="px-3 pt-1.5 pb-0 md:px-6 relative"
           style={{ userSelect: "none", WebkitUserSelect: "none" }}
         >
           {chartData.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center pt-6 pb-8">Belum ada data</p>
+            <p className="text-muted-foreground text-center pt-6 pb-8" style={fontResponsive}>
+              Belum ada data
+            </p>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={outerRadius * 2 + 70}>
@@ -414,7 +424,7 @@ export default function RegionPieChart() {
                           textAnchor="middle"
                           dominantBaseline="central"
                           style={{
-                            fontSize: "clamp(12px, 3vw, 14px)",
+                            fontSize: "clamp(11px, 2.8vw, 14px)",
                             fontWeight: activeIndex === index ? 700 : 500,
                             cursor: "pointer",
                           }}
@@ -439,9 +449,6 @@ export default function RegionPieChart() {
                     tabIndex={-1}
                     focusable={false}
                     onClick={(_, index) => {
-                      // Dipakai desktop & mobile
-                      // Mobile: onClick Recharts firing ~300ms setelah tap (setelah touchend)
-                      // didScrollRef mencegah ini diproses jika user sedang scroll
                       if (didScrollRef.current) return;
                       toggleSlice(index);
                     }}
@@ -457,12 +464,12 @@ export default function RegionPieChart() {
 
               {activeIndex !== undefined && tooltipData && (
                 <div
-                  className="absolute left-1/2 z-50 bg-background border border-border rounded-lg px-3 py-2 shadow-md text-sm pointer-events-none -translate-x-1/2"
+                  className="absolute left-1/2 z-50 bg-background border border-border rounded-lg px-2.5 py-1.5 md:px-3 md:py-2 shadow-md pointer-events-none -translate-x-1/2"
                   style={{ top: "calc(50% - 15px)" }}
                 >
-                  <span className="font-medium">{tooltipData.name}</span>{" "}
-                  <span className="text-primary font-semibold">{tooltipData.value}</span>{" "}
-                  <span className="text-foreground">({tooltipData.percentage.toFixed(1)}%)</span>
+                  <span className="font-medium" style={fontResponsive}>{tooltipData.name}</span>{" "}
+                  <span className="text-primary font-semibold" style={fontResponsive}>{tooltipData.value}</span>{" "}
+                  <span className="text-foreground" style={fontResponsive}>({tooltipData.percentage.toFixed(1)}%)</span>
                 </div>
               )}
             </>
@@ -472,13 +479,13 @@ export default function RegionPieChart() {
         {/* Legend */}
         {chartData.length > 0 && (
           <div
-            className="flex flex-wrap justify-center gap-x-4 gap-y-2 px-6 pb-6 pt-4"
+            className="flex flex-wrap justify-center gap-x-3 gap-y-1.5 md:gap-x-4 md:gap-y-2 px-3 pb-4 pt-3 md:px-6 md:pb-6 md:pt-4"
             style={{ userSelect: "none", WebkitUserSelect: "none" }}
           >
             {chartData.map((entry, i) => (
               <div
                 key={entry.name}
-                className="flex items-center gap-1.5 cursor-pointer"
+                className="flex items-center gap-1 md:gap-1.5 cursor-pointer"
                 onMouseEnter={() => { if (!isMobile) activateSlice(i); }}
                 onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
                 onTouchEnd={() => {
@@ -488,12 +495,12 @@ export default function RegionPieChart() {
                 }}
               >
                 <div
-                  className="w-3 h-3 rounded-sm flex-shrink-0"
+                  className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm flex-shrink-0"
                   style={{ backgroundColor: COLORS[getColorIndex(i, chartData.length)] }}
                 />
                 <span
                   style={{
-                    fontSize: "clamp(12px, 3vw, 14px)",
+                    fontSize: "clamp(11px, 2.8vw, 14px)",
                     fontWeight: activeIndex === i ? 700 : 400,
                     color: activeIndex === i ? "hsl(var(--primary))" : "#111827",
                   }}
