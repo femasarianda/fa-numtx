@@ -109,9 +109,9 @@ export default function HistoricalReport() {
       </div>
 
       <Card className="rounded-xl shadow-sm">
-        <CardHeader className="px-3 py-3 md:px-6 md:py-4">
+        <CardHeader className="px-3 py-3 pb-2 md:px-6 md:py-4 md:pb-3">
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>Jenis Kendaraan</CardTitle>
+            <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>Tabel Historical</CardTitle>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground whitespace-nowrap" style={fontHeader}>Baris per halaman:</span>
               <select
@@ -139,7 +139,7 @@ export default function HistoricalReport() {
               <table className="w-full" style={{ minWidth: "400px" }}>
                 <thead>
                   <tr className="border-b border-border text-muted-foreground">
-                    <th className="text-left py-2.5 px-2 md:py-3 md:px-3 font-semibold" style={fontHeader}>Jenis Kendaraan</th>
+                    <th className="text-left py-2.5 px-2 md:py-3 md:px-3 font-semibold" style={fontHeader}>Jenis</th>
                     <th className="text-left py-2.5 px-2 md:py-3 md:px-3 font-semibold" style={fontHeader}>Tanggal</th>
                     <th className="text-left py-2.5 px-2 md:py-3 md:px-3 font-semibold" style={fontHeader}>Waktu</th>
                     <th className="text-left py-2.5 px-2 md:py-3 md:px-3 font-semibold" style={fontHeader}>Nomor Polisi</th>
