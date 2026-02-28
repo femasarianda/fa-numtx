@@ -90,7 +90,7 @@ export default function DateRangePicker({ startDate, endDate, selectedPeriod, on
       <SheetTrigger asChild>
         <button
           onClick={handleOpenSheet}
-          className="flex items-center gap-2 cursor-pointer hover:opacity-60 transition-opacity bg-muted/90 rounded-full px-3 py-1 md:px-4 md:py-1.5"
+          className="flex items-center gap-2 cursor-pointer hover:opacity-60 transition-opacity bg-muted/90 border border-border rounded-full px-3 py-1 md:px-4 md:py-1.5"
         >
           <span className="text-primary font-medium whitespace-nowrap" style={fontHeader}>
             {format(startDate, "dd MMM yy")} - {format(endDate, "dd MMM yy")}
