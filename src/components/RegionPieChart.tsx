@@ -4,16 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Sector } from "recharts";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { format, subDays, subMonths, startOfMonth } from "date-fns";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { format } from "date-fns";
+import DateRangePicker, { getDateRange } from "@/components/DateRangePicker";
 
 const COLORS = [
   "#A5B4FC", "#818CF8", "#6366F1", "#4F46E5", "#4338CA",
@@ -25,44 +17,6 @@ function getColorIndex(index: number, total: number): number {
   if (index < len) return index;
   if (index >= len && index < len + 2) return (index - len) + 2;
   return index % len;
-}
-
-const PERIOD_OPTIONS = [
-  { value: "latest", label: "Latest" },
-  { value: "previous_day", label: "Previous Day" },
-  { value: "last_7_days", label: "Last 7 Days" },
-  { value: "this_month", label: "This Month" },
-  { value: "previous_month", label: "Previous Month" },
-  { value: "last_1_month", label: "Last 1 Month" },
-  { value: "last_3_months", label: "Last 3 Months" },
-  { value: "last_6_months", label: "Last 6 Months" },
-  { value: "year_to_date", label: "Year to Date" },
-  { value: "last_1_year", label: "Last 1 Year" },
-] as const;
-
-function getDateRange(period: string): { start: Date; end: Date } {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  switch (period) {
-    case "latest": return { start: today, end: today };
-    case "previous_day": return { start: subDays(today, 1), end: subDays(today, 1) };
-    case "last_7_days": return { start: subDays(today, 6), end: today };
-    case "this_month": return { start: startOfMonth(today), end: today };
-    case "previous_month": {
-      const prevMonth = subMonths(today, 1);
-      return { start: startOfMonth(prevMonth), end: new Date(today.getFullYear(), today.getMonth(), 0) };
-    }
-    case "last_1_month": return { start: subMonths(today, 1), end: today };
-    case "last_3_months": return { start: subMonths(today, 3), end: today };
-    case "last_6_months": return { start: subMonths(today, 6), end: today };
-    case "year_to_date": return { start: startOfMonth(today), end: today };
-    case "last_1_year": return { start: subMonths(today, 12), end: today };
-    default: return { start: subMonths(today, 1), end: today };
-  }
-}
-
-function adjustDate(date: Date, delta: number): Date {
-  return subDays(date, -delta);
 }
 
 const renderActiveShape = (props: {
@@ -96,12 +50,6 @@ export default function RegionPieChart() {
   const [selectedPeriod, setSelectedPeriod] = useState("last_1_month");
   const [startDate, setStartDate] = useState(() => getDateRange("last_1_month").start);
   const [endDate, setEndDate] = useState(() => getDateRange("last_1_month").end);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [startPopoverOpen, setStartPopoverOpen] = useState(false);
-  const [endPopoverOpen, setEndPopoverOpen] = useState(false);
-  const [tempPeriod, setTempPeriod] = useState(selectedPeriod);
-  const [tempStart, setTempStart] = useState(startDate);
-  const [tempEnd, setTempEnd] = useState(endDate);
 
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartDataRef = useRef<TooltipData[]>([]);
@@ -200,25 +148,10 @@ export default function RegionPieChart() {
     return () => window.removeEventListener("mousedown", onMouseDown);
   }, [resetActiveSlice]);
 
-  const handleOpenSheet = () => {
-    setTempPeriod(selectedPeriod);
-    setTempStart(startDate);
-    setTempEnd(endDate);
-    setSheetOpen(true);
-  };
-
-  const handlePeriodChange = (value: string) => {
-    setTempPeriod(value);
-    const range = getDateRange(value);
-    setTempStart(range.start);
-    setTempEnd(range.end);
-  };
-
-  const handleApply = () => {
-    setSelectedPeriod(tempPeriod);
-    setStartDate(tempStart);
-    setEndDate(tempEnd);
-    setSheetOpen(false);
+  const handleDateApply = (period: string, start: Date, end: Date) => {
+    setSelectedPeriod(period);
+    setStartDate(start);
+    setEndDate(end);
   };
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -252,17 +185,13 @@ export default function RegionPieChart() {
     resetActiveSlice();
   }, [chartData, resetActiveSlice]);
 
-  // Shared responsive font styles (same pattern as HistoricalReport)
   const fontResponsive = { fontSize: "clamp(11px, 3vw, 14px)" };
-  const fontHeader = { fontSize: "clamp(11px, 2.8vw, 13px)" };
 
   if (isLoading) {
     return (
       <Card className="rounded-xl shadow-sm">
         <CardHeader className="px-3 py-3 md:px-6 md:py-4">
-          <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>
-            Informasi Kendaraan
-          </CardTitle>
+          <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>Informasi Kendaraan</CardTitle>
         </CardHeader>
         <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
           <Skeleton className="w-full h-[260px] md:h-[300px] rounded-lg" />
@@ -275,15 +204,11 @@ export default function RegionPieChart() {
     return (
       <Card className="rounded-xl shadow-sm">
         <CardHeader className="px-3 py-3 md:px-6 md:py-4">
-          <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>
-            Informasi Kendaraan
-          </CardTitle>
+          <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>Informasi Kendaraan</CardTitle>
         </CardHeader>
         <CardContent className="px-3 pb-3 md:px-6 md:pb-6 flex flex-col items-center gap-3 py-6 md:py-8">
           <p className="text-muted-foreground" style={fontResponsive}>Gagal memuat data</p>
-          <button onClick={() => refetch()} className="text-primary hover:underline" style={fontResponsive}>
-            Coba lagi
-          </button>
+          <button onClick={() => refetch()} className="text-primary hover:underline" style={fontResponsive}>Coba lagi</button>
         </CardContent>
       </Card>
     );
@@ -294,114 +219,23 @@ export default function RegionPieChart() {
 
   return (
     <Card className="rounded-xl shadow-sm">
-
-      {/* Card Header */}
       <CardHeader className="px-3 py-3 md:px-6 md:py-4 pb-0">
-        <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>
-          Informasi Kendaraan
-        </CardTitle>
+        <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>Informasi Kendaraan</CardTitle>
       </CardHeader>
 
-      {/* Date range picker trigger */}
       <div className="flex justify-center px-3 pt-3 pb-0 md:px-6 md:pt-4">
-        <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetTrigger asChild>
-            <button
-              onClick={handleOpenSheet}
-              className="flex items-center gap-2 cursor-pointer hover:opacity-60 transition-opacity bg-muted/90 rounded-full px-3 py-1 md:px-4 md:py-1.5"
-            >
-              <span className="text-primary font-medium" style={fontHeader}>
-                {format(startDate, "dd MMM yy")} - {format(endDate, "dd MMM yy")}
-              </span>
-              <CalendarIcon className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />
-            </button>
-          </SheetTrigger>
-
-          <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] overflow-y-auto mx-auto lg:max-w-[33vw] lg:rounded-2xl pt-4 lg:bottom-auto lg:top-1/2 lg:-translate-y-1/2">
-            <SheetHeader className="pb-2">
-              <SheetTitle className="text-center" style={fontResponsive}>Periode</SheetTitle>
-            </SheetHeader>
-
-            <RadioGroup value={tempPeriod} onValueChange={handlePeriodChange} className="space-y-0">
-              {PERIOD_OPTIONS.map((opt) => (
-                <div key={opt.value} className="flex items-center justify-between py-1.5 px-1">
-                  <Label htmlFor={opt.value} className="font-normal cursor-pointer flex-1" style={fontResponsive}>
-                    {opt.label}
-                  </Label>
-                  <RadioGroupItem value={opt.value} id={opt.value} />
-                </div>
-              ))}
-            </RadioGroup>
-
-            <Separator className="my-2" />
-
-            <div className="grid grid-cols-2 gap-3 md:gap-4 mb-5 md:mb-6">
-              <div>
-                <p className="font-semibold text-primary mb-2 text-center" style={fontHeader}>Start</p>
-                <div className="flex items-center justify-between gap-1">
-                  <button onClick={() => setTempStart(adjustDate(tempStart, -1))} className="p-1 text-muted-foreground hover:text-foreground">
-                    <ChevronLeft className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  </button>
-                  <Popover open={startPopoverOpen} onOpenChange={setStartPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <button className="hover:text-primary hover:underline transition-colors cursor-pointer" style={fontHeader}>
-                        {format(tempStart, "dd MMM yy")}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="center">
-                      <Calendar mode="single" selected={tempStart}
-                                onSelect={(date) => { if (date) { setTempStart(date); setStartPopoverOpen(false); } }}
-                                captionLayout="dropdown-buttons" fromYear={2025} toYear={new Date().getFullYear()}
-                                initialFocus className={cn("p-3 pointer-events-auto")} />
-                    </PopoverContent>
-                  </Popover>
-                  <button onClick={() => setTempStart(adjustDate(tempStart, 1))} className="p-1 text-muted-foreground hover:text-foreground">
-                    <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  </button>
-                </div>
-              </div>
-              <div>
-                <p className="font-semibold text-primary mb-2 text-center" style={fontHeader}>End</p>
-                <div className="flex items-center justify-between gap-1">
-                  <button onClick={() => setTempEnd(adjustDate(tempEnd, -1))} className="p-1 text-muted-foreground hover:text-foreground">
-                    <ChevronLeft className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  </button>
-                  <Popover open={endPopoverOpen} onOpenChange={setEndPopoverOpen}>
-                    <PopoverTrigger asChild>
-                      <button className="hover:text-primary hover:underline transition-colors cursor-pointer" style={fontHeader}>
-                        {format(tempEnd, "dd MMM yy")}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="center">
-                      <Calendar mode="single" selected={tempEnd}
-                                onSelect={(date) => { if (date) { setTempEnd(date); setEndPopoverOpen(false); } }}
-                                captionLayout="dropdown-buttons" fromYear={2025} toYear={new Date().getFullYear()}
-                                initialFocus className={cn("p-3 pointer-events-auto")} />
-                    </PopoverContent>
-                  </Popover>
-                  <button onClick={() => setTempEnd(adjustDate(tempEnd, 1))} className="p-1 text-muted-foreground hover:text-foreground">
-                    <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <Button onClick={handleApply} className="w-full" style={fontResponsive}>Apply</Button>
-          </SheetContent>
-        </Sheet>
+        <DateRangePicker
+          startDate={startDate}
+          endDate={endDate}
+          selectedPeriod={selectedPeriod}
+          onApply={handleDateApply}
+        />
       </div>
 
       <div ref={chartContainerRef}>
-
-        {/* Pie chart */}
-        <div
-          className="px-3 pt-1.5 pb-0 md:px-6 relative"
-          style={{ userSelect: "none", WebkitUserSelect: "none" }}
-        >
+        <div className="px-3 pt-1.5 pb-0 md:px-6 relative" style={{ userSelect: "none", WebkitUserSelect: "none" }}>
           {chartData.length === 0 ? (
-            <p className="text-muted-foreground text-center pt-6 pb-8" style={fontResponsive}>
-              Belum ada data
-            </p>
+            <p className="text-muted-foreground text-center pt-6 pb-8" style={fontResponsive}>Belum ada data</p>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={outerRadius * 2 + 70}>
@@ -476,7 +310,6 @@ export default function RegionPieChart() {
           )}
         </div>
 
-        {/* Legend */}
         {chartData.length > 0 && (
           <div
             className="flex flex-wrap justify-center gap-x-3 gap-y-1.5 md:gap-x-4 md:gap-y-2 px-3 pb-4 pt-3 md:px-6 md:pb-6 md:pt-4"
