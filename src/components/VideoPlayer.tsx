@@ -91,55 +91,43 @@ export default function VideoPlayer() {
       <CardContent className="px-3 pb-3 md:px-6 md:pb-6">
         {camera?.stream_url ? (
           <div className="space-y-2.5 md:space-y-3">
-            <video
-              ref={videoRef}
-              src={camera.stream_url}
-              className="w-full aspect-video rounded-lg bg-black object-cover"
-              onPlay={() => setPlaying(true)}
-              onPause={() => setPlaying(false)}
-            />
-
-            {/* Playback controls */}
-            <div className="flex items-center justify-center gap-3 md:gap-4">
-              <button
-                onClick={() => skip(-30)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Mundur 30 detik"
-              >
-                <Icon icon="mdi:rewind" className="w-5 h-5 md:w-6 md:h-6" />
-              </button>
-              <button
-                onClick={() => skip(-10)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Mundur 10 detik"
-              >
-                <Icon icon="mdi:skip-previous" className="w-5 h-5 md:w-6 md:h-6" />
-              </button>
-              <button
-                onClick={togglePlay}
-                className="bg-primary text-primary-foreground rounded-full p-1.5 md:p-2 hover:opacity-90 transition-opacity"
-                aria-label={playing ? "Pause" : "Play"}
-              >
-                <Icon
-                  icon={playing ? "mdi:pause" : "mdi:play"}
-                  className="w-5 h-5 md:w-6 md:h-6"
+            {camera.stream_url.includes(".html") ? (
+              <iframe
+                src={camera.stream_url}
+                className="w-full aspect-video rounded-lg bg-black"
+                allow="autoplay; fullscreen"
+                allowFullScreen
+                style={{ border: "none" }}
+              />
+            ) : (
+              <>
+                <video
+                  ref={videoRef}
+                  src={camera.stream_url}
+                  className="w-full aspect-video rounded-lg bg-black object-cover"
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
                 />
-              </button>
-              <button
-                onClick={() => skip(10)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Maju 10 detik"
-              >
-                <Icon icon="mdi:skip-next" className="w-5 h-5 md:w-6 md:h-6" />
-              </button>
-              <button
-                onClick={() => skip(30)}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Maju 30 detik"
-              >
-                <Icon icon="mdi:fast-forward" className="w-5 h-5 md:w-6 md:h-6" />
-              </button>
-            </div>
+                {/* Playback controls */}
+                <div className="flex items-center justify-center gap-3 md:gap-4">
+                  <button onClick={() => skip(-30)} className="text-muted-foreground hover:text-foreground transition-colors" aria-label="Mundur 30 detik">
+                    <Icon icon="mdi:rewind" className="w-5 h-5 md:w-6 md:h-6" />
+                  </button>
+                  <button onClick={() => skip(-10)} className="text-muted-foreground hover:text-foreground transition-colors" aria-label="Mundur 10 detik">
+                    <Icon icon="mdi:skip-previous" className="w-5 h-5 md:w-6 md:h-6" />
+                  </button>
+                  <button onClick={togglePlay} className="bg-primary text-primary-foreground rounded-full p-1.5 md:p-2 hover:opacity-90 transition-opacity" aria-label={playing ? "Pause" : "Play"}>
+                    <Icon icon={playing ? "mdi:pause" : "mdi:play"} className="w-5 h-5 md:w-6 md:h-6" />
+                  </button>
+                  <button onClick={() => skip(10)} className="text-muted-foreground hover:text-foreground transition-colors" aria-label="Maju 10 detik">
+                    <Icon icon="mdi:skip-next" className="w-5 h-5 md:w-6 md:h-6" />
+                  </button>
+                  <button onClick={() => skip(30)} className="text-muted-foreground hover:text-foreground transition-colors" aria-label="Maju 30 detik">
+                    <Icon icon="mdi:fast-forward" className="w-5 h-5 md:w-6 md:h-6" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center aspect-video rounded-lg bg-muted text-muted-foreground gap-2">
