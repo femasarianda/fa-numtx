@@ -115,19 +115,18 @@ export default function HistoricalReport() {
             <CardTitle style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>Tabel Historical</CardTitle>
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground whitespace-nowrap" style={fontHeader}>Baris per halaman:</span>
-              <div className="relative">
-                <select
-                  value={pageSize}
-                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                  className="appearance-none border border-input bg-card text-foreground rounded-xl px-3 py-1.5 pr-8 focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer hover:bg-accent transition-colors"
-                  style={fontResponsive}
-                >
+              <Select value={String(pageSize)} onValueChange={(val) => handlePageSizeChange(Number(val))}>
+                <SelectTrigger className="w-[70px] h-8 rounded-xl border-input bg-card text-foreground" style={fontResponsive}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
                   {PAGE_SIZE_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>{opt}</option>
+                    <SelectItem key={opt} value={String(opt)} className="rounded-lg" style={fontResponsive}>
+                      {opt}
+                    </SelectItem>
                   ))}
-                </select>
-                <Icon icon="mdi:chevron-down" className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              </div>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardHeader>
