@@ -48,7 +48,7 @@ export default function Login() {
 
           <div>
             <h1 className="text-2xl font-bold text-foreground">Log in</h1>
-            <p className="text-muted-foreground text-sm mt-1">Log in with your details to access</p>
+            <p className="text-muted-foreground text-sm mt-1">Silakan Log in dengan Username dan Password yang Benar</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
