@@ -55,8 +55,8 @@ interface DateRangePickerProps {
   onApply: (period: string, start: Date, end: Date) => void;
 }
 
-const fontResponsive = { fontSize: "clamp(11px, 3vw, 14px)" };
-const fontHeader = { fontSize: "clamp(11px, 2.8vw, 13px)" };
+const fontResponsive = { fontSize: "clamp(13px, 3.2vw, 15px)" };
+const fontHeader = { fontSize: "clamp(13px, 3vw, 15px)" };
 
 export default function DateRangePicker({ startDate, endDate, selectedPeriod, onApply }: DateRangePickerProps) {
   const [sheetOpen, setSheetOpen] = useState(false);

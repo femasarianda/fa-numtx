@@ -99,7 +99,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </span>
           </div>
         </div>
-        <div className="p-4 md:p-6 max-w-7xl mx-auto">{children}</div>
+        {/* Main content with transition */}
+        <div className="p-4 md:p-6 max-w-7xl mx-auto animate-in fade-in-0 duration-300">{children}</div>
       </main>
 
       {/* Mobile Bottom Nav */}
