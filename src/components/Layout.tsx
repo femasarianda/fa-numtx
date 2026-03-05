@@ -37,7 +37,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="border-b border-border" />
         </div>
 
-        <nav className="flex flex-col gap-4 px-3 flex-1">
+        <nav className="flex flex-col gap-4 px-3">
           {navItems.map((item) => {
             const active = location.pathname === item.path;
             return (
@@ -58,7 +58,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="px-3 pb-10 mt-1">
+        <div className="px-3 mt-16">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full"
