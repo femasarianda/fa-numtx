@@ -23,7 +23,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-[220px] min-h-screen bg-card border-r border-border fixed left-0 top-0 z-30">
-        <div className="flex items-center gap-2 px-5 py-6">
+        <div className="flex items-center gap-2 px-5 pt-8 pb-6">
           <img
             src="https://res.cloudinary.com/dvdtjfcgg/image/upload/v1771552062/logo_dolan_sawah_e5ue30.jpg"
             alt="Logo"
@@ -32,9 +32,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <span className="font-bold text-lg text-foreground">Fa-NumTX</span>
         </div>
 
-        <p className="px-5 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Menu</p>
+        <div className="px-5 mb-6">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Menu</p>
+          <div className="border-b border-border" />
+        </div>
 
-        <nav className="flex flex-col gap-1 px-3 flex-1">
+        <nav className="flex flex-col gap-4 px-3 flex-1">
           {navItems.map((item) => {
             const active = location.pathname === item.path;
             return (
@@ -42,7 +45,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors",
                   active
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -55,7 +58,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="px-3 pb-6">
+        <div className="px-3 pb-10 mt-6">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full"

@@ -17,8 +17,8 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         month: "space-y-4",
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: cn(
-          "text-sm font-medium",
-          props.captionLayout === "dropdown-buttons" ? "hidden" : "",
+        "text-sm font-medium",
+        props.captionLayout?.startsWith("dropdown") ? "hidden" : "",
         ),
         caption_dropdowns: "flex items-center gap-1",
         dropdown: "appearance-none bg-transparent border border-border rounded-md px-2 py-1 text-sm font-medium cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary",
@@ -50,9 +50,13 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }: C
         ...classNames,
       }}
       components={{
-        IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
-        IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
-      }}
+      Chevron: ({ orientation, ...props }) => {
+        if (orientation === "left") {
+        return <ChevronLeft className="h-4 w-4" />;
+      }
+        return <ChevronRight className="h-4 w-4" />;
+     },
+    }}
       {...props}
     />
   );
