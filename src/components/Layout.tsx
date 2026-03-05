@@ -23,7 +23,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-[220px] min-h-screen bg-card border-r border-border fixed left-0 top-0 z-30">
-        <div className="flex items-center gap-2 px-5 pt-8 pb-6">
+        <div className="flex items-center gap-2 px-5 pt-8 pb-16">
           <img
             src="https://res.cloudinary.com/dvdtjfcgg/image/upload/v1771552062/logo_dolan_sawah_e5ue30.jpg"
             alt="Logo"
