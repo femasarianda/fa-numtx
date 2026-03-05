@@ -1,7 +1,18 @@
+import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { clearUser, getStoredUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const navItems = [
   { label: "Dashboard", path: "/dashboard", icon: "mdi:view-dashboard-outline" },
@@ -13,6 +24,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const user = getStoredUser();
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   const handleLogout = () => {
     clearUser();
@@ -60,7 +72,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
         <div className="px-3 mt-16">
           <button
-            onClick={handleLogout}
+            onClick={() => setLogoutOpen(true)}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full"
           >
             <Icon icon="mdi:logout" className="w-5 h-5" />
@@ -87,7 +99,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </span>
           </div>
         </div>
-        <div className="p-4 md:p-6 max-w-7xl mx-auto">{children}</div>
+        {/* Main content with transition */}
+        <div className="p-4 md:p-6 max-w-7xl mx-auto animate-in fade-in-0 duration-300">{children}</div>
       </main>
 
       {/* Mobile Bottom Nav */}
@@ -109,13 +122,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           );
         })}
         <button
-          onClick={handleLogout}
+          onClick={() => setLogoutOpen(true)}
           className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-xs font-medium text-muted-foreground"
         >
           <Icon icon="mdi:logout" className="w-5 h-5" />
           <span>Logout</span>
         </button>
       </nav>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+        <AlertDialogContent className="rounded-2xl max-w-xs">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Logout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin keluar dari akun ini?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
