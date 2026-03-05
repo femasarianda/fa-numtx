@@ -121,13 +121,31 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           );
         })}
         <button
-          onClick={handleLogout}
+          onClick={() => setLogoutOpen(true)}
           className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-xs font-medium text-muted-foreground"
         >
           <Icon icon="mdi:logout" className="w-5 h-5" />
           <span>Logout</span>
         </button>
       </nav>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+        <AlertDialogContent className="rounded-2xl max-w-xs">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Logout</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin keluar dari akun ini?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={handleLogout} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
