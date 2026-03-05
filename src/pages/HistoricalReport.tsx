@@ -94,7 +94,7 @@ export default function HistoricalReport() {
           <Icon icon="mdi:magnify" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Nomor polisi / daerah..."
+            placeholder="Nomor polisi, daerah"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
             className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 rounded-xl border border-input bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
