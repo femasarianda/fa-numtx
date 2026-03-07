@@ -35,18 +35,6 @@ cp .env.example .env
 npm run dev
 ```
 
-## Environment Variables
-
-Buat file `.env` di root project dengan variabel berikut:
-
-```
-VITE_SUPABASE_PROJECT_ID=your_project_id
-VITE_SUPABASE_PUBLISHABLE_KEY=your_anon_key
-VITE_SUPABASE_URL=https://your-project.supabase.co
-```
-
-> ⚠️ **Jangan commit file `.env` ke repository.** Pastikan `.env` sudah ada di `.gitignore`.
-
 ## Struktur Database (Supabase)
 
 | Tabel | Deskripsi |
