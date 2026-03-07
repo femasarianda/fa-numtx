@@ -42,7 +42,7 @@ npm run dev
 | `cameras` | Data kamera CCTV |
 | `regions` | Daftar wilayah/daerah |
 | `vehicle_detections` | Hasil deteksi plat kendaraan |
-| `weekly_exports` | Log ekspor laporan mingguan |
+| `exports` | Log ekspor laporan |
 | `users` | Data pengguna sistem |
 
 ## Lisensi
