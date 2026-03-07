@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 .env
+.lovable/
+.workspace/
+*.tsbuildinfo
+bun.lock
+bun.lockb
 
 # Editor directories and files
 .vscode/*
