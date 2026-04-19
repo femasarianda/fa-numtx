@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
-import { clearUser, getStoredUser } from "@/lib/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -23,11 +23,11 @@ const navItems = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const user = getStoredUser();
+  const { profile, signOut } = useAuth();
   const [logoutOpen, setLogoutOpen] = useState(false);
 
-  const handleLogout = () => {
-    clearUser();
+  const handleLogout = async () => {
+    await signOut();
     navigate("/login");
   };
 
@@ -95,7 +95,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div className="hidden md:flex items-center">
             <span className="text-sm text-muted-foreground">
-              {user?.full_name || user?.username || "User"}
+              {profile?.full_name || profile?.email || "User"}
             </span>
           </div>
         </div>
