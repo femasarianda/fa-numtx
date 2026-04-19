@@ -1,30 +1,38 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
-import { loginUser, getStoredUser } from "@/lib/auth";
+import { loginUser } from "@/lib/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
+  const { session, loading: authLoading } = useAuth();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (getStoredUser()) navigate("/dashboard", { replace: true });
-  }, [navigate]);
+    if (!authLoading && session) navigate("/dashboard", { replace: true });
+  }, [session, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      await loginUser(username, password);
+      await loginUser(email, password);
       navigate("/dashboard", { replace: true });
     } catch (err: any) {
-      const msg = err.message || "Login gagal";
+      const raw = err.message || "Login gagal";
+      const msg =
+        raw === "Invalid login credentials"
+          ? "Email atau password salah"
+          : raw === "Email not confirmed"
+          ? "Email belum dikonfirmasi. Cek inbox Anda."
+          : raw;
       setError(msg);
       toast.error(msg);
     } finally {
@@ -48,7 +56,7 @@ export default function Login() {
 
           <div>
             <h1 className="text-2xl font-bold text-foreground">Log in</h1>
-            <p className="text-muted-foreground text-sm mt-1">Silakan Log in dengan Username dan Password yang Benar</p>
+            <p className="text-muted-foreground text-sm mt-1">Silakan Log in dengan Email dan Password yang Benar</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -57,13 +65,14 @@ export default function Login() {
             )}
 
             <div className="relative">
-              <Icon icon="mdi:account-outline" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Icon icon="mdi:email-outline" className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
@@ -76,6 +85,7 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="current-password"
                 className="w-full pl-10 pr-12 py-3 rounded-xl border border-input bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <button

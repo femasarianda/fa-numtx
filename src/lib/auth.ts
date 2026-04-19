@@ -1,46 +1,41 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const AUTH_KEY = "fa_numtx_user";
-
-export interface AuthUser {
+export interface AuthProfile {
   id: string;
-  username: string;
+  email: string | null;
   full_name: string | null;
-  role: string | null;
-  is_active: boolean | null;
+  role: "admin" | "operator" | null;
 }
 
-export function getStoredUser(): AuthUser | null {
-  try {
-    const raw = localStorage.getItem(AUTH_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
+export async function loginUser(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (error) throw new Error(error.message);
+  return data;
 }
 
-export function storeUser(user: AuthUser) {
-  localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+export async function logoutUser() {
+  await supabase.auth.signOut();
 }
 
-export function clearUser() {
-  localStorage.removeItem(AUTH_KEY);
-}
+export async function fetchUserProfile(userId: string): Promise<{
+  full_name: string | null;
+  role: "admin" | "operator" | null;
+}> {
+  const [profileRes, rolesRes] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
+    supabase.from("user_roles").select("role").eq("user_id", userId),
+  ]);
 
-export async function loginUser(username: string, password: string): Promise<AuthUser> {
-  const { data, error } = await supabase
-    .from("users")
-    .select("id, username, full_name, role, is_active")
-    .eq("username", username)
-    .eq("password", password)
-    .eq("is_active", true)
-    .single();
+  const role =
+    rolesRes.data?.find((r) => r.role === "admin")?.role ??
+    rolesRes.data?.[0]?.role ??
+    null;
 
-  if (error || !data) {
-    throw new Error("Username atau password salah");
-  }
-
-  const user: AuthUser = data;
-  storeUser(user);
-  return user;
+  return {
+    full_name: profileRes.data?.full_name ?? null,
+    role: (role as "admin" | "operator" | null) ?? null,
+  };
 }
