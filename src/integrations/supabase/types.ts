@@ -110,39 +110,6 @@ export type Database = {
         }
         Relationships: []
       }
-      users: {
-        Row: {
-          created_at: string | null
-          full_name: string | null
-          id: string
-          is_active: boolean | null
-          password: string
-          role: string | null
-          updated_at: string | null
-          username: string
-        }
-        Insert: {
-          created_at?: string | null
-          full_name?: string | null
-          id?: string
-          is_active?: boolean | null
-          password: string
-          role?: string | null
-          updated_at?: string | null
-          username: string
-        }
-        Update: {
-          created_at?: string | null
-          full_name?: string | null
-          id?: string
-          is_active?: boolean | null
-          password?: string
-          role?: string | null
-          updated_at?: string | null
-          username?: string
-        }
-        Relationships: []
-      }
       vehicle_detections: {
         Row: {
           camera_id: string | null
@@ -234,15 +201,7 @@ export type Database = {
           period_start?: string
           total_records?: number | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "weekly_exports_generated_by_fkey"
-            columns: ["generated_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
