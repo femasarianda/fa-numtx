@@ -12,6 +12,12 @@ const COLORS = [
   "#5B21B6", "#6D28D9", "#7C3AED", "#8B5CF6", "#A78BFA", "#C4B5FD",
 ];
 
+const OTHERS_NAME = "Others";
+const OTHERS_COLOR = "#94A3B8";
+const MIN_PERCENTAGE_FOR_OWN_SLICE = 1.2;
+const MAX_PRIMARY_SLICES = 50;
+const MIN_LABEL_PERCENTAGE = 6;
+
 function getColorIndex(index: number, total: number): number {
   const len = COLORS.length;
   if (index < len) return index;
@@ -175,9 +181,28 @@ export default function RegionPieChart() {
       counts[name] = (counts[name] || 0) + 1;
     });
     const total = data.length;
-    return Object.entries(counts)
+    const sortedRegions = Object.entries(counts)
       .map(([name, value]) => ({ name, value, percentage: (value / total) * 100 }))
       .sort((a, b) => b.value - a.value);
+
+    const primarySlices = sortedRegions
+      .filter((entry) => entry.percentage >= MIN_PERCENTAGE_FOR_OWN_SLICE)
+      .slice(0, MAX_PRIMARY_SLICES);
+
+    const primaryNames = new Set(primarySlices.map((entry) => entry.name));
+    const collapsedSlices = sortedRegions.filter((entry) => !primaryNames.has(entry.name));
+
+    if (collapsedSlices.length === 0) {
+      return sortedRegions;
+    }
+
+    const othersValue = collapsedSlices.reduce((sum, entry) => sum + entry.value, 0);
+    const othersPercentage = (othersValue / total) * 100;
+
+    return [
+      ...primarySlices,
+      { name: OTHERS_NAME, value: othersValue, percentage: othersPercentage },
+    ];
   }, [data]);
 
   useEffect(() => {
@@ -246,8 +271,12 @@ export default function RegionPieChart() {
                     cy="50%"
                     outerRadius={outerRadius}
                     dataKey="value"
+                    minAngle={2}
+                    paddingAngle={1}
                     stroke="none"
                     label={({ percentage, cx, cy, midAngle, index }) => {
+                      if (index === undefined) return null;
+                      if (percentage < MIN_LABEL_PERCENTAGE && activeIndex !== index) return null;
                       const RADIAN = Math.PI / 180;
                       const x = cx + labelRadius * Math.cos(-midAngle * RADIAN);
                       const y = cy + labelRadius * Math.sin(-midAngle * RADIAN);
@@ -287,8 +316,8 @@ export default function RegionPieChart() {
                       toggleSlice(index);
                     }}
                   >
-                    {chartData.map((_, i) => (
-                      <Cell key={i} fill={COLORS[getColorIndex(i, chartData.length)]}
+                    {chartData.map((entry, i) => (
+                      <Cell key={i} fill={entry.name === OTHERS_NAME ? OTHERS_COLOR : COLORS[getColorIndex(i, chartData.length)]}
                             stroke="none" style={{ outline: "none" }} tabIndex={-1} />
                     ))}
                   </Pie>
@@ -359,6 +388,7 @@ function RegionLegend({
         const top = el.offsetTop;
         if (!rowTops.some((t) => Math.abs(t - top) < 2)) rowTops.push(top);
       });
+      rowTops.sort((a, b) => a - b);
 
       if (rowTops.length <= 2) {
         setNeedsToggle(false);
@@ -367,16 +397,11 @@ function RegionLegend({
       }
 
       setNeedsToggle(true);
-      // Height = bottom of last item in row 2 - top of row 1
       const row1Top = rowTops[0];
       const row2Top = rowTops[1];
-      const row3Top = rowTops[2];
-      // Use distance from row1 top to row3 top minus the gap = end of row 2
-      const rowSpacing = row2Top - row1Top;
-      const itemHeight = row3Top - row2Top - (rowSpacing - (items[0].offsetHeight));
-      // Simpler: height = row3Top - row1Top (this gives us start of row 3, which is end of row 2 + gap)
-      // We want exactly 2 rows visible, so subtract the gap
-      const twoRowsHeight = row3Top - row1Top - 2; // small buffer to avoid showing partial row 3
+      const secondRowItems = items.filter((el) => Math.abs(el.offsetTop - row2Top) < 2);
+      const secondRowBottom = Math.max(...secondRowItems.map((el) => el.offsetTop + el.offsetHeight));
+      const twoRowsHeight = secondRowBottom - row1Top + 2;
       setCollapsedHeight(twoRowsHeight);
     };
 
@@ -413,7 +438,7 @@ function RegionLegend({
           >
             <div
               className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm flex-shrink-0"
-              style={{ backgroundColor: COLORS[getColorIndex(i, chartData.length)] }}
+              style={{ backgroundColor: entry.name === OTHERS_NAME ? OTHERS_COLOR : COLORS[getColorIndex(i, chartData.length)] }}
             />
             <span
               style={{
