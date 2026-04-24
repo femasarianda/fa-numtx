@@ -311,40 +311,135 @@ export default function RegionPieChart() {
         </div>
 
         {chartData.length > 0 && (
-          <div
-            className="flex flex-wrap justify-center gap-x-3 gap-y-1.5 md:gap-x-4 md:gap-y-2 px-3 pb-4 pt-3 md:px-6 md:pb-6 md:pt-4"
-            style={{ userSelect: "none", WebkitUserSelect: "none" }}
-          >
-            {chartData.map((entry, i) => (
-              <div
-                key={entry.name}
-                className="flex items-center gap-1 md:gap-1.5 cursor-pointer"
-                onMouseEnter={() => { if (!isMobile) activateSlice(i); }}
-                onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
-                onTouchEnd={() => {
-                  if (!isMobile) return;
-                  if (didScrollRef.current) return;
-                  toggleSlice(i);
-                }}
-              >
-                <div
-                  className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm flex-shrink-0"
-                  style={{ backgroundColor: COLORS[getColorIndex(i, chartData.length)] }}
-                />
-                <span
-                  style={{
-                    fontSize: "clamp(11px, 2.8vw, 14px)",
-                    fontWeight: activeIndex === i ? 700 : 400,
-                    color: activeIndex === i ? "hsl(var(--primary))" : "#111827",
-                  }}
-                >
-                  {entry.name}
-                </span>
-              </div>
-            ))}
-          </div>
+          <RegionLegend
+            chartData={chartData}
+            activeIndex={activeIndex}
+            isMobile={isMobile}
+            activateSlice={activateSlice}
+            resetActiveSlice={resetActiveSlice}
+            toggleSlice={toggleSlice}
+            didScrollRef={didScrollRef}
+          />
         )}
       </div>
     </Card>
+  );
+}
+
+interface RegionLegendProps {
+  chartData: TooltipData[];
+  activeIndex: number | undefined;
+  isMobile: boolean;
+  activateSlice: (i: number) => void;
+  resetActiveSlice: () => void;
+  toggleSlice: (i: number) => void;
+  didScrollRef: React.MutableRefObject<boolean>;
+}
+
+function RegionLegend({
+  chartData, activeIndex, isMobile,
+  activateSlice, resetActiveSlice, toggleSlice, didScrollRef,
+}: RegionLegendProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
+  const [needsToggle, setNeedsToggle] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Measure: take first item's offsetTop to detect rows; collapsed = first 2 rows
+  useEffect(() => {
+    const measure = () => {
+      const container = containerRef.current;
+      if (!container) return;
+      const items = Array.from(container.children) as HTMLElement[];
+      if (items.length === 0) return;
+
+      // Group items by their offsetTop (rows)
+      const rowTops: number[] = [];
+      items.forEach((el) => {
+        const top = el.offsetTop;
+        if (!rowTops.some((t) => Math.abs(t - top) < 2)) rowTops.push(top);
+      });
+
+      if (rowTops.length <= 2) {
+        setNeedsToggle(false);
+        setCollapsedHeight(null);
+        return;
+      }
+
+      setNeedsToggle(true);
+      // Height = bottom of last item in row 2 - top of row 1
+      const row1Top = rowTops[0];
+      const row2Top = rowTops[1];
+      const row3Top = rowTops[2];
+      // Use distance from row1 top to row3 top minus the gap = end of row 2
+      const rowSpacing = row2Top - row1Top;
+      const itemHeight = row3Top - row2Top - (rowSpacing - (items[0].offsetHeight));
+      // Simpler: height = row3Top - row1Top (this gives us start of row 3, which is end of row 2 + gap)
+      // We want exactly 2 rows visible, so subtract the gap
+      const twoRowsHeight = row3Top - row1Top - 2; // small buffer to avoid showing partial row 3
+      setCollapsedHeight(twoRowsHeight);
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [chartData]);
+
+  // Reset expanded when data changes
+  useEffect(() => { setExpanded(false); }, [chartData]);
+
+  return (
+    <div className="px-3 pb-4 pt-3 md:px-6 md:pb-6 md:pt-4">
+      <div
+        ref={containerRef}
+        className="flex flex-wrap justify-center gap-x-3 gap-y-1.5 md:gap-x-4 md:gap-y-2 overflow-hidden transition-[max-height] duration-300 ease-in-out"
+        style={{
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          maxHeight: needsToggle && !expanded && collapsedHeight !== null ? `${collapsedHeight}px` : "9999px",
+        }}
+      >
+        {chartData.map((entry, i) => (
+          <div
+            key={entry.name}
+            className="flex items-center gap-1 md:gap-1.5 cursor-pointer"
+            onMouseEnter={() => { if (!isMobile) activateSlice(i); }}
+            onMouseLeave={() => { if (!isMobile) resetActiveSlice(); }}
+            onTouchEnd={() => {
+              if (!isMobile) return;
+              if (didScrollRef.current) return;
+              toggleSlice(i);
+            }}
+          >
+            <div
+              className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-sm flex-shrink-0"
+              style={{ backgroundColor: COLORS[getColorIndex(i, chartData.length)] }}
+            />
+            <span
+              style={{
+                fontSize: "clamp(11px, 2.8vw, 14px)",
+                fontWeight: activeIndex === i ? 700 : 400,
+                color: activeIndex === i ? "hsl(var(--primary))" : "#111827",
+              }}
+            >
+              {entry.name}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {needsToggle && (
+        <div className="flex justify-center mt-2 md:mt-3">
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="text-primary hover:underline font-medium transition-colors"
+            style={{ fontSize: "clamp(11px, 2.8vw, 13px)" }}
+          >
+            {expanded ? "Show less ▲" : "Show more ▼"}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
