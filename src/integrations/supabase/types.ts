@@ -167,42 +167,6 @@ export type Database = {
           },
         ]
       }
-      weekly_exports: {
-        Row: {
-          created_at: string | null
-          file_name: string | null
-          file_url: string | null
-          generated_at: string | null
-          generated_by: string | null
-          id: string
-          period_end: string
-          period_start: string
-          total_records: number | null
-        }
-        Insert: {
-          created_at?: string | null
-          file_name?: string | null
-          file_url?: string | null
-          generated_at?: string | null
-          generated_by?: string | null
-          id?: string
-          period_end: string
-          period_start: string
-          total_records?: number | null
-        }
-        Update: {
-          created_at?: string | null
-          file_name?: string | null
-          file_url?: string | null
-          generated_at?: string | null
-          generated_by?: string | null
-          id?: string
-          period_end?: string
-          period_start?: string
-          total_records?: number | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       dashboard_region_stats: {
