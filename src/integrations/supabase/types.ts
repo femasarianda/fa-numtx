@@ -119,9 +119,9 @@ export type Database = {
           id: string
           plate_number: string
           raw_ocr_text: string | null
-          region_id: number | null
           region_name: string | null
           snapshot_url: string | null
+          subregion_name: string | null
           vehicle_type: string | null
         }
         Insert: {
@@ -132,9 +132,9 @@ export type Database = {
           id?: string
           plate_number: string
           raw_ocr_text?: string | null
-          region_id?: number | null
           region_name?: string | null
           snapshot_url?: string | null
+          subregion_name?: string | null
           vehicle_type?: string | null
         }
         Update: {
@@ -145,9 +145,9 @@ export type Database = {
           id?: string
           plate_number?: string
           raw_ocr_text?: string | null
-          region_id?: number | null
           region_name?: string | null
           snapshot_url?: string | null
+          subregion_name?: string | null
           vehicle_type?: string | null
         }
         Relationships: [
@@ -156,13 +156,6 @@ export type Database = {
             columns: ["camera_id"]
             isOneToOne: false
             referencedRelation: "cameras"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "vehicle_detections_region_id_fkey"
-            columns: ["region_id"]
-            isOneToOne: false
-            referencedRelation: "regions"
             referencedColumns: ["id"]
           },
         ]
