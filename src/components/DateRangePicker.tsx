@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format, subDays, subMonths, startOfMonth } from "date-fns";
+import { format, subDays, subMonths, startOfMonth, startOfYear } from "date-fns";
 import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -38,7 +38,7 @@ export function getDateRange(period: string): { start: Date; end: Date } {
     case "last_1_month": return { start: subMonths(today, 1), end: today };
     case "last_3_months": return { start: subMonths(today, 3), end: today };
     case "last_6_months": return { start: subMonths(today, 6), end: today };
-    case "year_to_date": return { start: startOfMonth(today), end: today };
+    case "year_to_date": return { start: startOfYear(today), end: today };
     case "last_1_year": return { start: subMonths(today, 12), end: today };
     default: return { start: subMonths(today, 1), end: today };
   }
