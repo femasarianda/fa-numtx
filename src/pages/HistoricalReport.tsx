@@ -11,6 +11,16 @@ import DateRangePicker, { getDateRange } from "@/components/DateRangePicker";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
+function splitDetectedAt(value: string | null) {
+  if (!value) return { date: "-", time: "-" };
+
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}:\d{2}:\d{2})/);
+  if (!match) return { date: value, time: value };
+
+  const [, year, month, day, time] = match;
+  return { date: `${day}/${month}/${year}`, time };
+}
+
 function getPaginationPages(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const pages: (number | "...")[] = [];
@@ -160,19 +170,19 @@ export default function HistoricalReport() {
                           ))}
                         </tr>
                       ))
-                    : data?.rows.map((row) => (
-                        <tr key={row.id} className="border-b border-border hover:bg-accent/50 transition-colors">
-                          <td className="py-2.5 px-2 md:py-3 md:px-3" style={fontResponsive}>{row.vehicle_type || "-"}</td>
-                          <td className="py-2.5 px-2 md:py-3 md:px-3" style={fontResponsive}>
-                            {row.detected_at ? format(new Date(row.detected_at), "dd/MM/yyyy") : "-"}
-                          </td>
-                          <td className="py-2.5 px-2 md:py-3 md:px-3" style={fontResponsive}>
-                            {row.detected_at ? format(new Date(row.detected_at), "HH:mm:ss") : "-"}
-                          </td>
-                          <td className="py-2.5 px-2 md:py-3 md:px-3 font-mono" style={fontResponsive}>{row.plate_number}</td>
-                          <td className="py-2.5 px-2 md:py-3 md:px-3" style={fontResponsive}>{row.region_name || "-"}</td>
-                        </tr>
-                      ))}
+                    : data?.rows.map((row) => {
+                        const detectedAt = splitDetectedAt(row.detected_at);
+
+                        return (
+                          <tr key={row.id} className="border-b border-border hover:bg-accent/50 transition-colors">
+                            <td className="py-2.5 px-2 md:py-3 md:px-3" style={fontResponsive}>{row.vehicle_type || "-"}</td>
+                            <td className="py-2.5 px-2 md:py-3 md:px-3" style={fontResponsive}>{detectedAt.date}</td>
+                            <td className="py-2.5 px-2 md:py-3 md:px-3" style={fontResponsive}>{detectedAt.time}</td>
+                            <td className="py-2.5 px-2 md:py-3 md:px-3 font-mono" style={fontResponsive}>{row.plate_number}</td>
+                            <td className="py-2.5 px-2 md:py-3 md:px-3" style={fontResponsive}>{row.region_name || "-"}</td>
+                          </tr>
+                        );
+                      })}
                   {!isLoading && data?.rows.length === 0 && (
                     <tr>
                       <td colSpan={5} className="py-8 text-center text-muted-foreground" style={fontResponsive}>Tidak ada data</td>
