@@ -13,9 +13,9 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export default function ExportReport() {
-  const [selectedPeriod, setSelectedPeriod] = useState("last_1_month");
-  const [startDate, setStartDate] = useState(() => getDateRange("last_1_month").start);
-  const [endDate, setEndDate] = useState(() => getDateRange("last_1_month").end);
+  const [selectedPeriod, setSelectedPeriod] = useState("year_to_date");
+  const [startDate, setStartDate] = useState(() => getDateRange("year_to_date").start);
+  const [endDate, setEndDate] = useState(() => getDateRange("year_to_date").end);
   const [isGenerating, setIsGenerating] = useState(false);
 
   const { data, isLoading, error, refetch } = useQuery({

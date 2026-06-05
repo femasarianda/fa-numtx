@@ -30,9 +30,9 @@ export default function HistoricalReport() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
-  const [selectedPeriod, setSelectedPeriod] = useState("last_1_month");
-  const [startDate, setStartDate] = useState(() => getDateRange("last_1_month").start);
-  const [endDate, setEndDate] = useState(() => getDateRange("last_1_month").end);
+  const [selectedPeriod, setSelectedPeriod] = useState("year_to_date");
+  const [startDate, setStartDate] = useState(() => getDateRange("year_to_date").start);
+  const [endDate, setEndDate] = useState(() => getDateRange("year_to_date").end);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["detections", search, page, pageSize, format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd")],
