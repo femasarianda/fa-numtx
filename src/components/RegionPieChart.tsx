@@ -165,7 +165,7 @@ export default function RegionPieChart() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("vehicle_detections")
-        .select("region_name")
+        .select("region_name, subregion_name")
         .gte("detected_at", format(startDate, "yyyy-MM-dd"))
         .lte("detected_at", format(endDate, "yyyy-MM-dd") + "T23:59:59");
       if (error) throw error;
@@ -177,7 +177,7 @@ export default function RegionPieChart() {
     if (!data || data.length === 0) return [];
     const counts: Record<string, number> = {};
     data.forEach((d) => {
-      const name = d.region_name || "Unknown";
+      const name = d.subregion_name || d.region_name || "Unknown";
       counts[name] = (counts[name] || 0) + 1;
     });
     const total = data.length;

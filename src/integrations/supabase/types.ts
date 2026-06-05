@@ -118,9 +118,7 @@ export type Database = {
           detected_at: string | null
           id: string
           plate_number: string
-          raw_ocr_text: string | null
           region_name: string | null
-          snapshot_url: string | null
           subregion_name: string | null
           vehicle_type: string | null
         }
@@ -131,9 +129,7 @@ export type Database = {
           detected_at?: string | null
           id?: string
           plate_number: string
-          raw_ocr_text?: string | null
           region_name?: string | null
-          snapshot_url?: string | null
           subregion_name?: string | null
           vehicle_type?: string | null
         }
@@ -144,9 +140,7 @@ export type Database = {
           detected_at?: string | null
           id?: string
           plate_number?: string
-          raw_ocr_text?: string | null
           region_name?: string | null
-          snapshot_url?: string | null
           subregion_name?: string | null
           vehicle_type?: string | null
         }
