@@ -167,7 +167,7 @@ export default function HistoricalReport() {
                             {row.detected_at ? format(new Date(row.detected_at), "dd/MM/yyyy") : "-"}
                           </td>
                           <td className="py-2.5 px-2 md:py-3 md:px-3" style={fontResponsive}>
-                            {row.detected_at ? format(new Date(row.detected_at), "HH:mm") : "-"}
+                            {row.detected_at ? format(new Date(row.detected_at), "HH:mm:ss") : "-"}
                           </td>
                           <td className="py-2.5 px-2 md:py-3 md:px-3 font-mono" style={fontResponsive}>{row.plate_number}</td>
                           <td className="py-2.5 px-2 md:py-3 md:px-3" style={fontResponsive}>{row.region_name || "-"}</td>
