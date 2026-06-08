@@ -17,6 +17,9 @@ export default function ExportReport() {
   const [startDate, setStartDate] = useState(() => getDateRange("year_to_date").start);
   const [endDate, setEndDate] = useState(() => getDateRange("year_to_date").end);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const DEFAULT_ROWS = 10;
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["export-region-stats", format(startDate, "yyyy-MM-dd"), format(endDate, "yyyy-MM-dd")],
