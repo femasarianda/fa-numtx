@@ -166,7 +166,7 @@ export default function ExportReport() {
             <div className="space-y-4">
               {/* Preview list */}
               <div className="space-y-1.5">
-                {data.regions.map((r, i) => (
+                {(expanded ? data.regions : data.regions.slice(0, DEFAULT_ROWS)).map((r, i) => (
                   <div
                     key={r.name}
                     className="flex items-center gap-3 px-3 py-2 md:px-4 md:py-2.5 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors"
@@ -186,6 +186,19 @@ export default function ExportReport() {
                   </div>
                 ))}
               </div>
+
+              {data.regions.length > DEFAULT_ROWS && (
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((v) => !v)}
+                    className="text-primary hover:underline font-medium transition-colors"
+                    style={{ fontSize: "clamp(11px, 2.8vw, 13px)" }}
+                  >
+                    {expanded ? "Show less ▲" : `Show more ▼ (${data.regions.length - DEFAULT_ROWS})`}
+                  </button>
+                </div>
+              )}
 
               {/* Total */}
               <div className="flex justify-between items-center px-3 md:px-4 pt-2 border-t border-border">
