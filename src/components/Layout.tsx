@@ -35,14 +35,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-[220px] min-h-screen bg-card border-r border-border fixed left-0 top-0 z-30">
-        <div className="flex items-center gap-2 px-5 pt-8 pb-16">
+        <Link to="/dashboard" className="flex items-center gap-2 px-5 pt-8 pb-16 cursor-pointer hover:opacity-80 transition-opacity">
           <img
             src="https://res.cloudinary.com/dvdtjfcgg/image/upload/v1771552062/logo_dolan_sawah_e5ue30.jpg"
             alt="Logo"
             className="w-8 h-8 rounded-lg object-cover"
           />
           <span className="font-bold text-lg text-foreground">Fa-NumTX</span>
-        </div>
+        </Link>
 
         <div className="px-5 mb-6">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Menu</p>
