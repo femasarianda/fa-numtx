@@ -48,6 +48,7 @@ export default function ExportReport() {
     setSelectedPeriod(period);
     setStartDate(start);
     setEndDate(end);
+    setExpanded(false);
   };
 
   const generatePDF = () => {
