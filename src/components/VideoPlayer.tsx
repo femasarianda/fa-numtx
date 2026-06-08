@@ -4,62 +4,61 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const STREAM_URL = "https://stream.parkiranku.my.id/cctv/";
 const STREAM_ORIGIN = "https://stream.parkiranku.my.id";
+// Probe an image asset on the stream origin. Cloudflare 502 returns HTML,
+// so Image.onerror fires when the upstream is down.
+const PROBE_URL = `${STREAM_ORIGIN}/favicon.ico`;
 const CHECK_INTERVAL_MS = 15000;
 
 type Status = "checking" | "online" | "offline";
 
 function checkStream(): Promise<boolean> {
   return new Promise((resolve) => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => {
-      controller.abort();
-      resolve(false);
-    }, 5000);
-    fetch(`${STREAM_ORIGIN}/favicon.ico?_=${Date.now()}`, {
-      method: "GET",
-      mode: "no-cors",
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(() => {
-        clearTimeout(timeout);
-        resolve(true);
-      })
-      .catch(() => {
-        clearTimeout(timeout);
-        resolve(false);
-      });
+    const img = new Image();
+    let done = false;
+    const finish = (ok: boolean) => {
+      if (done) return;
+      done = true;
+      resolve(ok);
+    };
+    const timeout = setTimeout(() => finish(false), 5000);
+    img.onload = () => {
+      clearTimeout(timeout);
+      finish(true);
+    };
+    img.onerror = () => {
+      clearTimeout(timeout);
+      finish(false);
+    };
+    img.src = `${PROBE_URL}?_=${Date.now()}`;
   });
 }
 
 export default function VideoPlayer() {
   const [status, setStatus] = useState<Status>("checking");
   const [retryNonce, setRetryNonce] = useState(0);
-  const mountedRef = useRef(true);
+  const statusRef = useRef<Status>("checking");
+  statusRef.current = status;
 
   useEffect(() => {
-    mountedRef.current = true;
     let cancelled = false;
 
     const run = async () => {
-      setStatus("checking");
+      // Don't disrupt a working stream.
+      if (statusRef.current === "online") return;
       const ok = await checkStream();
-      if (cancelled || !mountedRef.current) return;
+      if (cancelled) return;
       setStatus(ok ? "online" : "offline");
     };
+
+    // Initial check (force checking state on manual retry)
+    setStatus("checking");
     run();
 
-    const id = window.setInterval(() => {
-      if (status === "online") return;
-      run();
-    }, CHECK_INTERVAL_MS);
-
+    const id = window.setInterval(run, CHECK_INTERVAL_MS);
     return () => {
       cancelled = true;
-      mountedRef.current = false;
       window.clearInterval(id);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retryNonce]);
 
   return (
@@ -123,7 +122,6 @@ function OfflineState({
   const isChecking = status === "checking";
   return (
     <div className="relative w-full h-full overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Animated grid pattern */}
       <div
         className="absolute inset-0 opacity-[0.08]"
         style={{
@@ -132,15 +130,10 @@ function OfflineState({
           backgroundSize: "32px 32px",
         }}
       />
-      {/* Soft glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,hsl(var(--primary)/0.18),transparent_60%)]" />
-      {/* Scanline shimmer */}
       <div
         className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent"
-        style={{
-          animation: "vp-scan 3.2s linear infinite",
-          top: "-2px",
-        }}
+        style={{ animation: "vp-scan 3.2s linear infinite", top: "-2px" }}
       />
 
       <div className="relative h-full w-full flex flex-col items-center justify-center text-center px-4 md:px-6">
@@ -157,10 +150,7 @@ function OfflineState({
           </div>
         </div>
 
-        <p
-          className="font-semibold text-white"
-          style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}
-        >
+        <p className="font-semibold text-white" style={{ fontSize: "clamp(13px, 3.5vw, 16px)" }}>
           {isChecking ? "Menghubungkan ke kamera…" : "Kamera tidak terhubung"}
         </p>
         <p
