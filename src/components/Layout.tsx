@@ -93,11 +93,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             />
             <span className="font-bold text-foreground">Fa-NumTX</span>
           </Link>
-          <div className="hidden md:flex items-center">
-            <span className="text-sm text-muted-foreground">
-              {profile?.full_name || profile?.email || "User"}
-            </span>
-          </div>
         </div>
         {/* Main content with transition */}
         <div className="p-4 md:p-6 max-w-7xl mx-auto animate-in fade-in-0 duration-300">{children}</div>
