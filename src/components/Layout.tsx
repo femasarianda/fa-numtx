@@ -84,7 +84,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <main className="flex-1 md:ml-[220px] pb-20 md:pb-0 min-h-screen">
         {/* Sticky Header */}
-        <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 md:px-6 py-3 flex items-center gap-3">
+        <div className="sticky top-0 z-20 bg-background/80 backdrop-blur-md border-b border-border px-4 md:px-6 py-3 flex items-center gap-3 md:hidden">
           <Link to="/dashboard" className="flex items-center gap-2 md:hidden cursor-pointer hover:opacity-80 transition-opacity">
             <img
               src="https://res.cloudinary.com/dvdtjfcgg/image/upload/v1771552062/logo_dolan_sawah_e5ue30.jpg"
