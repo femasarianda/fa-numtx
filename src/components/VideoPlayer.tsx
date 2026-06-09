@@ -3,63 +3,70 @@ import { Icon } from "@iconify/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const STREAM_URL = "https://stream.parkiranku.my.id/cctv/";
-const STREAM_ORIGIN = "https://stream.parkiranku.my.id";
-// Probe an image asset on the stream origin. Cloudflare 502 returns HTML,
-// so Image.onerror fires when the upstream is down.
-const PROBE_URL = `${STREAM_ORIGIN}/favicon.ico`;
 const CHECK_INTERVAL_MS = 15000;
 
 type Status = "checking" | "online" | "offline";
 
-function checkStream(): Promise<boolean> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    let done = false;
-    const finish = (ok: boolean) => {
-      if (done) return;
-      done = true;
-      resolve(ok);
-    };
-    const timeout = setTimeout(() => finish(false), 5000);
-    img.onload = () => {
-      clearTimeout(timeout);
-      finish(true);
-    };
-    img.onerror = () => {
-      clearTimeout(timeout);
-      finish(false);
-    };
-    img.src = `${PROBE_URL}?_=${Date.now()}`;
-  });
+async function checkStream(): Promise<boolean> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 6000);
+
+  try {
+    const response = await fetch(`${STREAM_URL}?_=${Date.now()}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    return response.ok;
+  } catch {
+    return false;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 export default function VideoPlayer() {
   const [status, setStatus] = useState<Status>("checking");
-  const [retryNonce, setRetryNonce] = useState(0);
+  const retryTimerRef = useRef<number | null>(null);
   const statusRef = useRef<Status>("checking");
   statusRef.current = status;
 
   useEffect(() => {
     let cancelled = false;
 
-    const run = async () => {
-      // Don't disrupt a working stream.
+    const clearRetryTimer = () => {
+      if (retryTimerRef.current) {
+        window.clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+    };
+
+    const run = async (showChecking = false) => {
       if (statusRef.current === "online") return;
+      clearRetryTimer();
+      if (showChecking) setStatus("checking");
+
       const ok = await checkStream();
       if (cancelled) return;
-      setStatus(ok ? "online" : "offline");
+
+      if (ok) {
+        setStatus("online");
+        clearRetryTimer();
+        return;
+      }
+
+      setStatus("offline");
+      retryTimerRef.current = window.setTimeout(() => run(true), CHECK_INTERVAL_MS);
     };
 
-    // Initial check (force checking state on manual retry)
-    setStatus("checking");
-    run();
+    run(true);
 
-    const id = window.setInterval(run, CHECK_INTERVAL_MS);
+    (window as Window & { retryVideoStream?: () => void }).retryVideoStream = () => run(true);
     return () => {
       cancelled = true;
-      window.clearInterval(id);
+      clearRetryTimer();
+      delete (window as Window & { retryVideoStream?: () => void }).retryVideoStream;
     };
-  }, [retryNonce]);
+  }, []);
 
   return (
     <Card className="rounded-xl shadow-sm">
@@ -103,7 +110,7 @@ export default function VideoPlayer() {
           ) : (
             <OfflineState
               status={status}
-              onRetry={() => setRetryNonce((n) => n + 1)}
+              onRetry={() => (window as Window & { retryVideoStream?: () => void }).retryVideoStream?.()}
             />
           )}
         </div>
